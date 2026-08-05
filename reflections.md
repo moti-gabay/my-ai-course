@@ -1,17 +1,15 @@
 # Assignment 1 — Reflections
 
 ## Exercise 1b: System Prompt, Temperature & Structured Output
-* **Which change had the biggest effect on the output?**  
-  The **System Prompt** had the most dramatic effect on the model's behavior. While `temperature` adjusts randomness and output structure dictates formatting (e.g. JSON), the System Prompt changes the fundamental persona, rules, and scope of how the model answers.
+* **Which change had the biggest effect on the output?**
+  The **System Prompt** had the most fundamental effect. While `temperature` impacts output variance and JSON schemas control standard syntax, the System Prompt modifies the model's persona, underlying capabilities, and output boundaries.
 
-## Exercise 1c: Grounded QA (RAG Basics)
-* **Why does forcing a quote and allowing "I don't know" reduce hallucination?**  
-  Requiring an explicit quote forces the model to ground its response in context tokens provided directly in the prompt. Permitting a strict exit response like *"I can't find that in the document"* removes the model's underlying bias to generate a plausible-sounding completion when context is missing.
+## Exercise 1c: Grounding & Hallucination
+* **Why does forcing a quote and allowing "I don't know" reduce hallucination?**
+  Forcing a quote explicitly grounds the model's attention in the document's provided context tokens. Allowing "I can't find that in the document" mitigates the model's inherent training bias to output a completion even when facts are absent.
 
 ## Exercise 2: Closed vs. Open Models
-* **Closed Model (Claude via OpenAI SDK):**  
-  * *Ease:* Extremely easy to set up with high-quality, fast responses out of the box.  
-  * *Cost:* Requires continuous token payments, API keys, online availability, and sends data to third-party servers.
-* **Open Model (Local Qwen via Hugging Face):**  
-  * *Gains:* Total control over execution, complete data privacy, offline operation, and zero cost per API call.  
-  * *Costs:* Consumes local CPU/RAM resources, runs noticeably slower, and delivers lower general capability compared to cloud models.
+* **Closed Model (Claude / OpenAI SDK):**
+  * *Easiness & Cost:* High setup speed and superior performance out-of-the-box, but paid per token, reliant on third-party uptime, and sends data externally.
+* **Open Model (Hugging Face / Local Qwen):**
+  * *Gains & Tradeoffs:* Full data privacy, offline execution, and zero token costs; offset by higher hardware demands, slower speed, and lower quality responses.

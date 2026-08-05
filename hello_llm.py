@@ -3,47 +3,49 @@ import json
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
-# 1. יצירת הלקוח - פנייה ל-Claude באמצעות כתובת ה-API המתאימה של Anthropic
+# 1. יצירת הלקוח בהתאם להנחיות: חיבור ל-OpenAI SDK אך הפנייה ל-Anthropic API
 client = OpenAI(
     base_url="https://api.anthropic.com/v1/",
     api_key=os.environ.get("ANTHROPIC_API_KEY")
 )
 
 MODEL_NAME = "claude-haiku-4-5"
-print("--- 1. קריאה בסיסית + System Prompt ---")
-# הודעת System מגדירה אישיות/חוקים, הודעת User היא השאלה
+
+print("--- 1. Exercise 1: Basic Call + System Prompt ---")
+# השקופיות מראות הפרדה בין System ל-User (תרגיל 1b)
 response = client.chat.completions.create(
     model=MODEL_NAME,
     messages=[
-        {"role": "system", "content": "You are a friendly recipes expert. Answer in strictly one sentence."},
+        {"role": "system", "content": "You are a pirate culinary expert. Answer in strictly one sentence."},
         {"role": "user", "content": "What is the secret to a good pizza?"}
     ],
     temperature=0.7
 )
-print("תשובת המודל:", response.choices[0].message.content)
+print("Reply:", response.choices[0].message.content)
 
 
-print("\n--- 2. ניסוי Temperature (0 לעומת 1) ---")
+print("\n--- 2. Exercise 1b: Temperature Experiment (0 vs 1) ---")
+# שקופית 38: השוואה בין determinism (0) ל-creativity (1)
 for temp in [0.0, 1.0]:
-    print(f"\nהרצה עם Temperature = {temp}:")
+    print(f"\nRunning with Temperature = {temp}:")
     for i in range(2):
         res = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[{"role": "user", "content": "Give me one random ingredient name."}],
             temperature=temp
         )
-        print(f"  הרצה {i+1}: {res.choices[0].message.content.strip()}")
+        print(f"  Run {i+1}: {res.choices[0].message.content.strip()}")
 
 
-print("\n--- 3. פלט מובנה (Structured Output - JSON) ---")
-# הדרכת המודל להחזיר רק JSON
+print("\n--- 3. Exercise 1b: Structured Output (JSON & Pydantic) ---")
+# שקופית 26: הגדרת JSON Schema ובניית אובייקט Pydantic
 json_prompt = """
 You are a culinary expert. Respond ONLY with a raw JSON object matching this schema:
 {
   "answer": "string",
   "confidence": number between 0 and 1
 }
-Do not include markdown formatting like ```json.
+Do not include markdown code block formatting (like ```json).
 """
 
 res_json = client.chat.completions.create(
@@ -55,16 +57,16 @@ res_json = client.chat.completions.create(
     temperature=0.2
 )
 raw_content = res_json.choices[0].message.content.strip()
-print("הטקסט הגולמי מהמודל:\n", raw_content)
+print("Raw Model Output:\n", raw_content)
 
-# דרך א': פענוח בעזרת json מובנה ב-Python
+# א) פענוח בעזרת json module מובנה
 parsed_dict = json.loads(raw_content)
-print(f"\n(א) חילוץ מ-dict: תשובה='{parsed_dict['answer']}', ביטחון={parsed_dict['confidence']}")
+print(f"\n(a) Python Dict Parsing: Answer='{parsed_dict['answer']}', Confidence={parsed_dict['confidence']}")
 
-# דרך ב': אימות ומיפוי בעזרת Pydantic
-class RecipeAnswer(BaseModel):
+# ב) אימות ומיפוי בעזרת Pydantic
+class AnswerModel(BaseModel):
     answer: str
     confidence: float = Field(ge=0.0, le=1.0)
 
-validated_obj = RecipeAnswer.model_validate_json(raw_content)
-print(f"(ב) אובייקט Pydantic מאומת: answer='{validated_obj.answer}', confidence={validated_obj.confidence}")
+validated_obj = AnswerModel.model_validate_json(raw_content)
+print(f"(b) Pydantic Validation: Answer='{validated_obj.answer}', Confidence={validated_obj.confidence}")
