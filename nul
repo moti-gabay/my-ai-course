@@ -1,0 +1,19 @@
+HTTP/2 200 
+content-type: application/pdf
+content-length: 4990051
+server: nginx
+content-disposition: inline; filename=FDA-FoodCode2022-FullDocument-01182023_0.pdf
+content-language: en
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+accept-ranges: bytes
+last-modified: Tue, 07 Nov 2023 14:01:02 GMT
+x-cache-status: MISS
+cache-control: public, max-age=0
+expires: Tue, 18 Aug 2026 09:18:15 GMT
+date: Tue, 18 Aug 2026 09:18:15 GMT
+alt-svc: h3=":443"; ma=93600
+strict-transport-security: max-age=31536000 ; includeSubDomains ; preload
+set-cookie: _abck=E3D84210A03DF80F814D46BF20019A4F~-1~YAAQrRc51YrITeufAQAAOQ8qFBCnmXi2jWDlx72+Aej9ES7laqLv+Aum9YlaPS0TC6CjQYMzJuYBEKvszlTmDIWpjXBF6NLFHpuv56eoL18xvG5DZJaRuXsfL3aphY2q3Hcaf67tN5cCZ/omVT6Mx3kFVydDpN703JQPG4eM156aFhrqAO2qMooZgjyyNKKfvoPQoXa/BEUsuS/K67TYwo2x52smSiz/7NiUB7pZbNE2O6io3PiEI4fxdf8HIaoYHZ9kpzFIM9lNjfQG1wRa465y9WA6CaL1gnwpMT7BQpCT6trz1Wfpa6G9dXw/KD2Y/NinjgtUWMs9zrfVcPx9Rj2bD2G2a/BEP8OTFjIzFK4r/aMkPd9lbK4erXY14K1FbmOscbVEDYNxpsmd4BxmAvUJMgWPrXHaCWetYa3L6hRlO4rNJYUZ2NIx4/9PZUoVIUk=~-1~-1~-1~-1~-1; Domain=.fda.gov; Path=/; Expires=Wed, 18 Aug 2027 09:18:15 GMT; Max-Age=31536000; Secure
+set-cookie: bm_sz=136DF55276A4756D904EB7716C0E8F22~YAAQrRc51YvITeufAQAAOQ8qFAB2/WPxwSUk0sgmXT5bDJI3rCWROepXtHbq+zCb4nI2mvoySZUOWSCrX5Afa4idqvY1cwv4/aode+NPrRQgLOkOLWrCyOJBhQ8D40MJyqSb1z01xSjLPW5W5QkFB8VtV2Ne7l2gAPxCzbwR+bnBtg/kOiB/7h1350F9b4pbNIa2ojvJ/FuBcp4DjszTmj/XhnK8xhQY5NLyaMDz+c7UVqcr9QSPCpd84GOjdZzFw7KiavUkO1/4JxELnhHsklY8estcoH2IfkzaKC7tjkIMO5bbF034bSTqA7ibsByHWHTeaTpdmbf5v8zBTmueUHsLq09FNAHaY0VgUEEke/h13sc=~4469554~3618886; Domain=.fda.gov; Path=/; Expires=Tue, 18 Aug 2026 13:18:15 GMT; Max-Age=14400
+

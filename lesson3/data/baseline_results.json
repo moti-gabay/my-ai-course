@@ -1,0 +1,522 @@
+[
+  {
+    "question_id": 1,
+    "question": "What are the minimum limits of liability required by Virginia law under this auto policy?",
+    "ground_truth_answer": "$25,000 for each person, subject to $50,000 for each accident, for bodily injury; and $20,000 for each accident for property damage.",
+    "generated_answer": "I do not know the specific minimum liability limits required by Virginia law for this particular auto policy without seeing the actual policy document.\n\nHowever, I can share that **Virginia's state minimum auto insurance requirements** are generally:\n- **$25,000** bodily injury liability per person\n- **$50,000** bodily injury liability per accident\n- **$20,000** property damage liability per accident\n\nTo confirm the exact minimum limits that apply to your specific policy, I recommend:\n1. Reviewing your policy document directly\n2. Contacting your insurance agent or company\n3. Visiting the Virginia Department of Motor Vehicles website\n\nIs there a specific policy document you'd like help understanding?",
+    "metrics": {
+      "latency_seconds": 2.31,
+      "input_tokens": 62,
+      "output_tokens": 151,
+      "total_tokens": 213
+    },
+    "classification": "Answered correctly"
+  },
+  {
+    "question_id": 2,
+    "question": "How much will the auto insurer pay for bail bonds after a covered accident?",
+    "ground_truth_answer": "Up to $250 for the cost of bail bonds required because of an accident, including related traffic law violations, as a supplementary payment that does not reduce the limit of liability.",
+    "generated_answer": "I do not know the specific amount, as auto insurance policies vary significantly by insurer and policy type.\n\nHowever, I can clarify that **standard auto insurance policies typically do not cover bail bonds** at all. Bail bonds are criminal justice costs, not accident-related expenses.\n\nIf you're looking for coverage related to an accident, auto insurance typically covers:\n- Vehicle damage (collision/comprehensive)\n- Liability for injuries/property damage\n- Medical payments\n\nIf you need information about a specific policy's coverage, I recommend reviewing your policy documents or contacting your insurance agent directly.",
+    "metrics": {
+      "latency_seconds": 2.03,
+      "input_tokens": 62,
+      "output_tokens": 126,
+      "total_tokens": 188
+    },
+    "classification": "Hallucinated"
+  },
+  {
+    "question_id": 3,
+    "question": "If my car loses resale value after being repaired, can I claim that lost value?",
+    "ground_truth_answer": "No. Part D expressly excludes loss due to diminution in value, defined as the actual or perceived loss in market or resale value from a direct and accidental loss.",
+    "generated_answer": "# Diminished Value Claims\n\nWhether you can claim diminished value depends on **your state's laws and your insurance policy**:\n\n**States that allow diminished value claims:**\n- Some states (like Georgia, South Carolina, and Alabama) permit \"diminished value\" claims, where you can recover the difference between your car's pre-accident value and post-repair value.\n\n**States that don't allow it:**\n- Many states do not recognize diminished value claims under standard insurance policies.\n\n**Important points:**\n- You typically need **collision or comprehensive coverage** to make this claim\n- You'll need documentation proving the value loss (professional appraisals)\n- The insurer may dispute the claim amount\n- Some insurers offer optional diminished value coverage for an additional premium\n\n**Recommendation:** Check your state's specific laws and review your policy, or contact your insurance agent directly about whether this applies to you.",
+    "metrics": {
+      "latency_seconds": 2.93,
+      "input_tokens": 65,
+      "output_tokens": 198,
+      "total_tokens": 263
+    },
+    "classification": "Hallucinated"
+  },
+  {
+    "question_id": 4,
+    "question": "What is the most the auto policy will pay for damage to a non-owned trailer?",
+    "ground_truth_answer": "$1,500.",
+    "generated_answer": "I do not know.\n\nThe coverage limits for damage to non-owned trailers vary significantly depending on the specific auto insurance policy, insurance company, and the type of coverage selected (collision, comprehensive, etc.). This information would be found in the individual policy's declarations page or coverage details.\n\nTo get an accurate answer, you would need to:\n- Review your specific policy documents\n- Contact your insurance agent or company directly\n- Check your policy online through your insurer's website",
+    "metrics": {
+      "latency_seconds": 1.96,
+      "input_tokens": 64,
+      "output_tokens": 102,
+      "total_tokens": 166
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 5,
+    "question": "How far into Mexico does the auto coverage extend, and for how long a trip?",
+    "ground_truth_answer": "Coverage extends to accidents and losses occurring in Mexico within 25 miles of the United States border, and only while the insured is in Mexico on a trip of 10 days or less. Liability insurance from a licensed Mexican insurance company must also be in force.",
+    "generated_answer": "I do not know.\n\nThe answer depends on the specific auto insurance policy and provider. Different insurance companies have different rules regarding Mexico coverage:\n\n- Some policies provide coverage only within a certain distance from the U.S. border (commonly 25-75 miles)\n- Some policies cover all of Mexico\n- Coverage duration and trip length limits vary by insurer\n\nTo get accurate information, you would need to:\n1. Review your specific insurance policy documents\n2. Contact your insurance company directly\n3. Check your insurer's website for Mexico coverage details",
+    "metrics": {
+      "latency_seconds": 1.97,
+      "input_tokens": 63,
+      "output_tokens": 119,
+      "total_tokens": 182
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 6,
+    "question": "If I cancel my auto policy myself, how much of the unearned premium do I get back?",
+    "ground_truth_answer": "90% of the pro rata unearned premium. If the insurer cancels, the refund is the full pro rata unearned premium.",
+    "generated_answer": "# Unearned Premium Refund\n\nThe amount of unearned premium you receive depends on your **insurance company's cancellation policy**, which varies by insurer and state.\n\n**Common scenarios:**\n\n- **Full refund**: Many insurers refund the full unearned premium if you cancel before the policy period ends\n- **Short-rate penalty**: Some companies apply a \"short-rate\" deduction (typically 10-15%), returning less than the pro-rata amount\n- **State regulations**: Some states require full pro-rata refunds or have specific rules protecting consumers\n\n**To get an accurate answer:**\n- Check your policy documents for the cancellation terms\n- Contact your insurance agent or company directly\n- Your state's insurance commissioner's office can provide specific regulations\n\nI recommend verifying with your specific insurer, as this genuinely varies.",
+    "metrics": {
+      "latency_seconds": 2.84,
+      "input_tokens": 67,
+      "output_tokens": 185,
+      "total_tokens": 252
+    },
+    "classification": "Hallucinated"
+  },
+  {
+    "question_id": 7,
+    "question": "Which form number identifies the Allstate auto policy document?",
+    "ground_truth_answer": "AU141756.",
+    "generated_answer": "I do not know the specific form number that identifies the Allstate auto policy document. While insurance companies use form numbers to designate their policy documents, this can vary by state, policy type, and coverage options. \n\nTo find the correct form number for an Allstate auto policy, I recommend:\n- Checking your policy documents directly\n- Contacting Allstate customer service\n- Visiting Allstate's official website",
+    "metrics": {
+      "latency_seconds": 1.67,
+      "input_tokens": 58,
+      "output_tokens": 94,
+      "total_tokens": 152
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 8,
+    "question": "How long is the illness waiting period on the Embrace pet policy?",
+    "ground_truth_answer": "Fourteen (14) days, starting from the Pet Original Start Date. Conditions that occur during it are excluded as pre-existing conditions.",
+    "generated_answer": "I do not know. I don't have access to specific details about Embrace pet insurance policy terms, including their illness waiting period. \n\nTo get accurate information about Embrace's illness waiting period, I recommend:\n- Visiting Embrace's official website\n- Calling their customer service directly\n- Reviewing the policy documents or summary of coverage\n\nWaiting periods can vary by policy type and may have changed, so it's best to verify with the company directly.",
+    "metrics": {
+      "latency_seconds": 1.7,
+      "input_tokens": 60,
+      "output_tokens": 100,
+      "total_tokens": 160
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 9,
+    "question": "Is there a separate annual cap on dental illness treatment under the Embrace policy?",
+    "ground_truth_answer": "Yes. Dental Illness treatment is subject to a $1,000 Annual Maximum sub-limit, in addition to the deductible and reimbursement percentage.",
+    "generated_answer": "I do not know the specific details about the Embrace policy's dental coverage structure, including whether there is a separate annual cap on dental illness treatment.\n\nTo get accurate information about this, I recommend:\n- Checking your policy documents directly\n- Contacting the insurance provider's customer service\n- Visiting the official Embrace insurance website\n\nInsurance policies can vary significantly by plan type and region, so it's important to verify details with the actual policy documentation.",
+    "metrics": {
+      "latency_seconds": 1.6,
+      "input_tokens": 62,
+      "output_tokens": 98,
+      "total_tokens": 160
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 10,
+    "question": "My vet cleaned my dog's teeth as part of treating diagnosed gum disease. Will Embrace reimburse the cleaning?",
+    "ground_truth_answer": "No. Dental prophylaxis procedures are not covered by the policy, even when done as a treatment for a Dental Illness.",
+    "generated_answer": "I do not know the specific details of Embrace's coverage for veterinary dental cleaning in this situation.\n\nHowever, I can tell you that **pet insurance policies typically cover dental cleaning only if it's treatment for a diagnosed condition** (like gum disease) rather than routine/preventive cleaning. Since your dog had a diagnosed gum disease that required treatment, there's a reasonable chance Embrace may cover it—but this depends on:\n\n- Your specific policy terms and coverage limits\n- Whether dental treatment is included in your plan\n- Any exclusions or waiting periods that might apply\n- Embrace's specific reimbursement rules\n\n**I recommend:**\n- Review your policy documents or coverage summary\n- Contact Embrace directly with your claim details—they can give you a definitive answer about reimbursement for this specific situation",
+    "metrics": {
+      "latency_seconds": 3.24,
+      "input_tokens": 72,
+      "output_tokens": 176,
+      "total_tokens": 248
+    },
+    "classification": "Hallucinated"
+  },
+  {
+    "question_id": 11,
+    "question": "Which orthopedic conditions does Embrace treat as pre-existing for the life of the policy if they occur early on?",
+    "ground_truth_answer": "Cruciate ligament injury, intervertebral disk disease (IVDD), patellar luxation and canine hip dysplasia, when they occur before the end of the illness waiting period or during the first 180 days after the Pet Original Start Date.",
+    "generated_answer": "I do not know.\n\nI don't have specific information about Embrace's policy regarding which orthopedic conditions are treated as pre-existing conditions for the life of the policy based on timing of occurrence. Insurance policies vary significantly between providers and plans, and specific coverage details would need to be verified directly with Embrace or through their official policy documentation.\n\nIf you need this information, I'd recommend:\n- Contacting Embrace directly\n- Reviewing your policy documents\n- Checking their official website",
+    "metrics": {
+      "latency_seconds": 1.6,
+      "input_tokens": 72,
+      "output_tokens": 108,
+      "total_tokens": 180
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 12,
+    "question": "How long do I have to start a lawsuit against Embrace after a loss?",
+    "ground_truth_answer": "Three (3) years after the date of loss, and only after full compliance with all policy terms.",
+    "generated_answer": "I do not know.\n\nThe time limit to start a lawsuit against an insurance company varies by jurisdiction and the specific terms of your policy. This is typically called a \"statute of limitations\" and can range from 1-6 years depending on your location and the type of claim.\n\nTo get an accurate answer, you should:\n1. Check your Embrace insurance policy documents\n2. Contact Embrace directly\n3. Consult your state's insurance regulations\n4. Speak with an attorney in your state\n\nI'd recommend reaching out to Embrace's customer service or reviewing your policy for the specific deadline that applies to your situation.",
+    "metrics": {
+      "latency_seconds": 1.9,
+      "input_tokens": 62,
+      "output_tokens": 136,
+      "total_tokens": 198
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 13,
+    "question": "Does Embrace cover my pet while I am on vacation outside the United States?",
+    "ground_truth_answer": "The policy territory is the United States of America, its territories or possessions. Exceptions may be made for military deployments and vacations as long as the named insured's primary residence is inside the policy territory.",
+    "generated_answer": "I do not know.\n\nTo get an accurate answer about Embrace's coverage for pets while you're on vacation outside the United States, I recommend:\n\n1. **Contacting Embrace directly** - Call their customer service or check your policy documents\n2. **Reviewing your policy** - Your specific plan may have details about international coverage\n3. **Visiting their website** - They may have FAQs or coverage information online\n\nPet insurance coverage can vary by plan and provider, so it's best to confirm directly with Embrace.",
+    "metrics": {
+      "latency_seconds": 1.72,
+      "input_tokens": 62,
+      "output_tokens": 116,
+      "total_tokens": 178
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 14,
+    "question": "How much will the Nationwide pet medical plan pay for specialized diagnostic tests in one policy term?",
+    "ground_truth_answer": "No more than seven hundred fifty dollars ($750) per policy term, and only for tests that result in the diagnosis of a covered condition.",
+    "generated_answer": "I do not know.\n\nThe specific coverage amounts for specialized diagnostic tests under Nationwide pet medical plans vary depending on the particular plan selected, deductible chosen, and reimbursement level. To get accurate information about coverage limits for diagnostic tests, I recommend:\n\n1. Visiting Nationwide's official website\n2. Contacting Nationwide directly\n3. Reviewing your specific policy documents\n\nCoverage details can differ significantly between plan options and may be subject to change.",
+    "metrics": {
+      "latency_seconds": 2.04,
+      "input_tokens": 65,
+      "output_tokens": 101,
+      "total_tokens": 166
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 15,
+    "question": "In the Nationwide Medical Plan Benefit Schedule, what are the Column A and Column B allowances for diagnosis code 1653?",
+    "ground_truth_answer": "Code 1653 is Heat Stroke (Hyperthermia): $350 Column A Primary Diagnosis Allowance and $140 Column B Secondary Diagnosis Allowance.",
+    "generated_answer": "I do not know.\n\nI don't have access to specific Nationwide Medical Plan Benefit Schedules or their detailed allowance tables for individual diagnosis codes. This type of detailed plan information varies by specific policy, plan version, and region.\n\nTo find this information, I recommend:\n1. Contacting Nationwide directly\n2. Reviewing your plan's official benefit schedule documentation\n3. Checking your policy documents or member portal\n4. Speaking with your insurance broker or agent",
+    "metrics": {
+      "latency_seconds": 2.66,
+      "input_tokens": 73,
+      "output_tokens": 104,
+      "total_tokens": 177
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 16,
+    "question": "Does Nationwide cover a torn cruciate ligament in the first year of the policy?",
+    "ground_truth_answer": "No. Diagnosis or treatment of cruciate ligament or meniscal damage or rupture that occurs during the first twelve calendar months that the policy is in effect is excluded.",
+    "generated_answer": "I do not know.\n\nCoverage for specific conditions like a torn cruciate ligament varies significantly depending on:\n- Which Nationwide insurance product (pet, auto, home, etc.)\n- Your specific policy terms and coverage options\n- Whether it's classified as a pre-existing condition\n- The waiting periods outlined in your policy\n\nTo get an accurate answer, I recommend:\n1. Reviewing your specific policy documents\n2. Contacting Nationwide customer service directly\n3. Speaking with your insurance agent",
+    "metrics": {
+      "latency_seconds": 1.48,
+      "input_tokens": 64,
+      "output_tokens": 109,
+      "total_tokens": 173
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 17,
+    "question": "Is hip dysplasia covered under the Nationwide medical plan?",
+    "ground_truth_answer": "No. Any bone or joint condition consisting of or associated with hip dysplasia, or any luxation or subluxation associated with hip dysplasia, is excluded.",
+    "generated_answer": "I do not know. \n\nCoverage for hip dysplasia under Nationwide medical plans depends on several factors, including:\n- The specific plan you have\n- Whether it's classified as a pre-existing condition\n- Your policy's terms and exclusions\n\nTo get an accurate answer, I recommend:\n1. Reviewing your policy documents\n2. Contacting Nationwide directly\n3. Speaking with your insurance agent\n\nThey can provide definitive information about your coverage.",
+    "metrics": {
+      "latency_seconds": 1.71,
+      "input_tokens": 59,
+      "output_tokens": 102,
+      "total_tokens": 161
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 18,
+    "question": "How long do I have to bring legal action against Nationwide?",
+    "ground_truth_answer": "Legal action must begin within one year of the pet's first treatment for any condition identified in the action, and only after complying with all policy provisions.",
+    "generated_answer": "I do not know the specific timeframe without additional context, as it depends on several factors:\n\n1. **Type of claim** - Different insurance claims (property, auto, health, etc.) may have different deadlines\n2. **Your state** - Statutes of limitations vary by state\n3. **Type of legal action** - Whether it's a breach of contract, bad faith claim, or other issue\n4. **Policy terms** - Your specific Nationwide policy may contain relevant provisions\n\n**General guidance:**\n- Most insurance contract disputes have a statute of limitations of **2-6 years** depending on your state\n- Some states have specific timeframes for insurance disputes (often 2-3 years)\n- Bad faith claims may have different deadlines\n\n**What you should do:**\n- Check your Nationwide policy documents for any deadlines\n- Consult your state's insurance commissioner's office\n- Contact an attorney in your state who specializes in insurance law\n\nTo get an accurate answer, I'd recommend contacting Nationwide directly or consulting with a local attorney.",
+    "metrics": {
+      "latency_seconds": 2.89,
+      "input_tokens": 59,
+      "output_tokens": 231,
+      "total_tokens": 290
+    },
+    "classification": "Hallucinated"
+  },
+  {
+    "question_id": 19,
+    "question": "Which company underwrites the Allianz Florida travel plan, and what is the policy form number?",
+    "ground_truth_answer": "Jefferson Insurance Company, 9950 Mayland Drive, Richmond, VA 23233. The form number is 101-P-FL-02-302.",
+    "generated_answer": "I do not know the specific underwriting company and policy form number for the Allianz Florida travel plan. \n\nTo get this information, I recommend:\n1. Checking your policy documents directly\n2. Contacting Allianz Florida customer service\n3. Visiting the official Allianz Florida website\n\nThese sources will provide you with the accurate underwriter name and policy form number you're looking for.",
+    "metrics": {
+      "latency_seconds": 1.39,
+      "input_tokens": 67,
+      "output_tokens": 92,
+      "total_tokens": 159
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 20,
+    "question": "How long do I have to file a claim under the Allianz Florida travel plan?",
+    "ground_truth_answer": "90 days from the date of the loss, except as otherwise provided by law.",
+    "generated_answer": "I do not know the specific claim filing deadline for the Allianz Florida travel plan. Claim deadlines vary by insurance product and policy terms.\n\nTo find this information, I recommend:\n- Checking your policy documents for the claims section\n- Contacting Allianz customer service directly\n- Visiting the Allianz website for your specific plan details\n\nThe timeframe is typically outlined in your policy's \"How to File a Claim\" or \"Claims Procedures\" section.",
+    "metrics": {
+      "latency_seconds": 1.67,
+      "input_tokens": 65,
+      "output_tokens": 108,
+      "total_tokens": 173
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 21,
+    "question": "I want to scuba dive on my trip. At what point does the Allianz Florida plan stop covering me?",
+    "ground_truth_answer": "Scuba diving below 120 feet (40 meters), or scuba diving without a dive master, is excluded as an extreme, high-risk sport.",
+    "generated_answer": "I do not know.\n\nI don't have access to the specific details of Allianz Florida insurance plans, including their coverage limits for scuba diving activities. Coverage details vary by plan type and policy terms.\n\nI recommend:\n1. Reviewing your specific policy documents\n2. Contacting Allianz directly\n3. Checking if scuba diving is covered and at what depth/conditions coverage applies\n\nMany travel insurance plans have restrictions on high-risk activities like scuba diving, so it's important to verify your exact coverage before your trip.",
+    "metrics": {
+      "latency_seconds": 1.74,
+      "input_tokens": 71,
+      "output_tokens": 120,
+      "total_tokens": 191
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 22,
+    "question": "What is the latest point at which coverage under the Allianz Florida plan ends?",
+    "ground_truth_answer": "Coverage ends on the earliest of the scheduled return day, the actual return day if earlier, the day and time the trip is cancelled, or the 365th day of the trip.",
+    "generated_answer": "I do not know the specific details about when coverage ends under the Allianz Florida plan. \n\nTo get accurate information about your Allianz Florida plan's coverage end date, I recommend:\n1. Checking your insurance policy documents\n2. Contacting Allianz customer service directly\n3. Logging into your Allianz account online\n\nThe coverage end date can vary depending on your specific plan type and when you enrolled.",
+    "metrics": {
+      "latency_seconds": 1.7,
+      "input_tokens": 64,
+      "output_tokens": 98,
+      "total_tokens": 162
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 23,
+    "question": "What happens if Allianz does not pay a Florida claim within 20 days of receiving proof of loss?",
+    "ground_truth_answer": "The claimant is entitled to interest at the rate of 12% per annum from the date of the payment agreement. If tender of payment is conditioned on executing a release, interest does not begin to accrue until the executed release is provided.",
+    "generated_answer": "I do not know the specific details of Allianz's claims payment procedures in Florida or what consequences they face for not paying within 20 days of receiving proof of loss.\n\nHowever, I can note that Florida has general insurance laws that may apply. Under Florida Statutes, insurers typically must acknowledge receipt of claims and handle them in a timely manner, but the specific requirements and penalties vary by situation and policy type.\n\nFor accurate information about Allianz's specific obligations and any penalties, I'd recommend:\n1. Reviewing your policy documents\n2. Contacting Allianz directly\n3. Consulting Florida's Department of Financial Services\n4. Speaking with a Florida insurance attorney if you have a claim dispute",
+    "metrics": {
+      "latency_seconds": 2.44,
+      "input_tokens": 70,
+      "output_tokens": 157,
+      "total_tokens": 227
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 24,
+    "question": "On the Allianz UK Premier level of cover, what is the maximum for emergency medical expenses?",
+    "ground_truth_answer": "£10 million, with a policy excess of £50.",
+    "generated_answer": "I do not know the specific maximum for emergency medical expenses on the Allianz UK Premier level of cover. \n\nTo get accurate information about this, I'd recommend:\n- Visiting the official Allianz UK website\n- Contacting Allianz UK directly\n- Reviewing your policy documents if you're an existing customer\n\nInsurance coverage limits can change and vary by product type, so it's important to verify current details directly with the provider.",
+    "metrics": {
+      "latency_seconds": 1.58,
+      "input_tokens": 67,
+      "output_tokens": 100,
+      "total_tokens": 167
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 25,
+    "question": "Does the Allianz UK Budget level of cover include cancellation or curtailment?",
+    "ground_truth_answer": "No. The schedule of cover shows 'No cover' for cancellation or curtailment and for loss of deposit on the Budget level. Cancellation cover appears only on Standard (£2,000) and Premier (£5,000).",
+    "generated_answer": "I do not know.\n\nTo get accurate information about what the Allianz UK Budget level of cover includes regarding cancellation or curtailment, I recommend:\n\n1. Checking the policy documents directly\n2. Visiting the official Allianz UK website\n3. Contacting Allianz UK customer service directly\n\nThey will be able to provide you with the specific details of what's covered under their Budget tier.",
+    "metrics": {
+      "latency_seconds": 1.29,
+      "input_tokens": 65,
+      "output_tokens": 94,
+      "total_tokens": 159
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 26,
+    "question": "What is the personal liability limit on the Allianz UK Budget level of cover?",
+    "ground_truth_answer": "£1 million, with a £250 policy excess. Standard and Premier both provide £2 million with the same £250 excess.",
+    "generated_answer": "I do not know the specific personal liability limit for the Allianz UK Budget level of cover. \n\nTo get accurate information about this, I recommend:\n- Visiting the Allianz UK website directly\n- Contacting Allianz UK customer service\n- Reviewing your policy documents if you're an existing customer\n\nInsurance product details and coverage limits can vary and change over time, so it's best to verify this information directly with the provider.",
+    "metrics": {
+      "latency_seconds": 1.54,
+      "input_tokens": 64,
+      "output_tokens": 100,
+      "total_tokens": 164
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 27,
+    "question": "When exactly does cover end on the Allianz UK travel policy once I get home?",
+    "ground_truth_answer": "Cover for each trip ends on return home, or within 24 hours of return to the home country, or at the expiry of the period of insurance, whichever comes first.",
+    "generated_answer": "I do not know the exact details of when cover ends on the Allianz UK travel policy after you return home.\n\nTo get accurate information about your specific policy's end date, I'd recommend:\n\n1. **Checking your policy documents** - the terms and conditions should specify the exact cover end date\n2. **Contacting Allianz directly** - they can confirm based on your individual policy\n3. **Reviewing your booking confirmation** - this may outline the coverage period\n\nGenerally, travel insurance policies typically end at midnight on the return date specified in your policy, but this can vary, so it's important to verify with Allianz directly.",
+    "metrics": {
+      "latency_seconds": 2.16,
+      "input_tokens": 65,
+      "output_tokens": 143,
+      "total_tokens": 208
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 28,
+    "question": "How quickly must the health plan answer a fast appeal?",
+    "ground_truth_answer": "Within 72 hours after receiving the appeal.",
+    "generated_answer": "# Fast Appeal Response Time\n\nHealth plans must typically respond to a **fast (expedited) appeal within 72 hours** of receiving the request.\n\nHowever, the exact timeframe may vary depending on:\n- The type of health plan (HMO, PPO, etc.)\n- State regulations\n- Whether it involves urgent/emergency care\n- Specific plan terms\n\nFor standard (non-expedited) appeals, the timeframe is generally **30 days**.\n\nIf you need information specific to a particular plan or state, I'd recommend checking your plan documents or contacting your health plan directly.",
+    "metrics": {
+      "latency_seconds": 2.01,
+      "input_tokens": 57,
+      "output_tokens": 131,
+      "total_tokens": 188
+    },
+    "classification": "Answered correctly"
+  },
+  {
+    "question_id": 29,
+    "question": "What is the deadline for a standard appeal answer, and is it different for Part B drugs?",
+    "ground_truth_answer": "For standard appeals the plan must answer within 30 calendar days after receiving the appeal; for Part B prescription drugs the answer must come within 7 calendar days.",
+    "generated_answer": "# Appeal Answer Deadlines\n\nBased on standard Medicare guidelines:\n\n**Standard Appeal Answer Deadline:**\n- Medicare typically has **30 days** to respond to an appeal at most levels of review.\n\n**Part B Drugs:**\nYes, there can be differences for Part B drugs. Part B drug appeals may follow specific timelines under the Competitive Acquisition Program (CAP) or other Part B drug payment policies, which could differ from standard timelines.\n\nHowever, the specific deadline variations depend on:\n- The type of appeal (redetermination, reconsideration, etc.)\n- Whether it involves CAP drugs or other Part B drugs\n- The specific Medicare contractor handling the appeal\n\n**I recommend** verifying the exact deadline with your Medicare contractor or the relevant appeal notice, as timelines can vary by situation and may have been updated.",
+    "metrics": {
+      "latency_seconds": 2.69,
+      "input_tokens": 65,
+      "output_tokens": 183,
+      "total_tokens": 248
+    },
+    "classification": "Answered correctly"
+  },
+  {
+    "question_id": 30,
+    "question": "How long after a denial notice do I have to file an appeal with the health plan?",
+    "ground_truth_answer": "The appeal request must be made within 60 calendar days from the date on the written notice of the decision.",
+    "generated_answer": "# Appeal Timeline After Denial Notice\n\nThe timeframe to appeal a health insurance denial typically depends on your plan type:\n\n- **Health insurance plans generally**: You usually have **180 days** (about 6 months) from the denial notice to file an appeal\n- **Medicare plans**: The timeline may differ, often allowing **60 days** for initial appeals\n\nHowever, the exact timeline can vary based on:\n- Your specific health plan's terms\n- Whether it's an internal appeal or external review\n- State regulations where you live\n\n**I recommend:**\n- Check your denial notice—it should specify the appeal deadline\n- Review your plan documents\n- Contact your health plan directly to confirm your specific timeline\n\nIt's important to act promptly to preserve your appeal rights.",
+    "metrics": {
+      "latency_seconds": 3.57,
+      "input_tokens": 64,
+      "output_tokens": 166,
+      "total_tokens": 230
+    },
+    "classification": "Hallucinated"
+  },
+  {
+    "question_id": 31,
+    "question": "Which chapter of the Evidence of Coverage contains the Medical Benefits Chart, and what does it list?",
+    "ground_truth_answer": "Chapter 4, 'Medical Benefits Chart (what is covered and what you pay)'. It is the Schedule of Cost Sharing listing covered medical services and what the member pays for each.",
+    "generated_answer": "# Medical Benefits Chart Location\n\nI do not know which specific chapter of the Evidence of Coverage contains the Medical Benefits Chart, as this varies by insurance plan and carrier.\n\nHowever, I can tell you that **the Medical Benefits Chart typically lists:**\n\n- Covered services and procedures\n- Cost-sharing details (copayments, coinsurance, deductibles)\n- Any limitations or restrictions on coverage\n- Whether prior authorization is required\n- Network vs. out-of-network coverage differences\n\n**To find this in your specific plan**, I recommend:\n1. Checking the table of contents in your Evidence of Coverage document\n2. Contacting your insurance carrier directly\n3. Visiting your insurer's website for your plan documents",
+    "metrics": {
+      "latency_seconds": 2.4,
+      "input_tokens": 65,
+      "output_tokens": 157,
+      "total_tokens": 222
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 32,
+    "question": "What is the maximum building coverage available for a single-family dwelling under the NFIP Regular Program?",
+    "ground_truth_answer": "$250,000 under the Regular Program. Under the Emergency Program the limit is $35,000 ($50,000 in Alaska, Guam, Hawaii and the U.S. Virgin Islands).",
+    "generated_answer": "I do not know the current maximum building coverage limit for a single-family dwelling under the NFIP (National Flood Insurance Program) Regular Program with certainty.\n\nHowever, I can note that NFIP coverage limits have historically been set at $250,000 for building coverage on single-family dwellings, but these limits are subject to periodic adjustments by Congress. \n\nFor the most current and accurate maximum building coverage limit, I recommend checking the official FEMA/NFIP website or contacting an NFIP-participating insurance agent directly.",
+    "metrics": {
+      "latency_seconds": 1.85,
+      "input_tokens": 68,
+      "output_tokens": 125,
+      "total_tokens": 193
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 33,
+    "question": "What is the minimum flood deductible for a post-FIRM building with $80,000 of building coverage charged full-risk rates?",
+    "ground_truth_answer": "$1,000. The minimum deductible for post-FIRM buildings (and pre-FIRM buildings charged full-risk rates) with building coverage of $100,000 or less is $1,000; above $100,000 it is $1,250.",
+    "generated_answer": "I do not know the specific minimum flood deductible for this exact scenario.\n\nHowever, I can provide general context: Under the National Flood Insurance Program (NFIP), flood insurance deductibles typically range from $500 to $30,000, and deductible amounts may vary based on factors such as whether a building is pre-FIRM or post-FIRM, the amount of coverage selected, and the specific flood zone rating.\n\nTo get an accurate answer for your specific situation, I recommend:\n- Contacting your flood insurance agent or broker\n- Checking your NFIP flood insurance policy documents\n- Visiting the FEMA or NFIP official websites",
+    "metrics": {
+      "latency_seconds": 2.43,
+      "input_tokens": 76,
+      "output_tokens": 150,
+      "total_tokens": 226
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 34,
+    "question": "My house is uninhabitable after a flood. Will the flood policy pay for the hotel I have to live in during repairs?",
+    "ground_truth_answer": "No. The Dwelling Form excludes any additional living expenses incurred while the insured building is being repaired or is unable to be occupied for any reason, because the policy pays only for direct physical loss by or from flood.",
+    "generated_answer": "I do not know whether your specific flood policy covers temporary housing costs, as this varies significantly by policy and insurance provider.\n\nHowever, I can tell you that:\n\n- **Standard flood insurance** (typically through the National Flood Insurance Program in the US) generally **does not** cover additional living expenses or temporary housing.\n\n- **Some private flood policies** may include coverage for additional living expenses, but this is not standard.\n\n**What you should do:**\n- Review your flood insurance policy documents, specifically looking for \"Additional Living Expenses\" or \"Loss of Use\" coverage\n- Contact your insurance agent or provider directly to ask if your policy covers temporary housing costs during repairs\n\nYou may also want to check if your homeowners insurance has this coverage, as it sometimes applies when a home becomes uninhabitable.",
+    "metrics": {
+      "latency_seconds": 2.97,
+      "input_tokens": 72,
+      "output_tokens": 171,
+      "total_tokens": 243
+    },
+    "classification": "Answered correctly"
+  },
+  {
+    "question_id": 35,
+    "question": "Is my swimming pool and its pump covered by the flood policy?",
+    "ground_truth_answer": "No. Hot tubs and spas that are not bathroom fixtures, and swimming pools and their equipment such as heaters, filters, pumps and pipes, are not insured wherever located.",
+    "generated_answer": "I do not know.\n\nFlood insurance coverage for swimming pools and pumps varies significantly depending on your specific policy's terms and conditions. To get an accurate answer, you would need to:\n\n1. **Review your flood policy documents** - Check the declarations page and coverage details\n2. **Contact your insurance agent or provider directly** - They can clarify what is and isn't covered under your specific policy\n\nGenerally speaking, standard flood policies often have limitations on certain property types, so it's important to verify your individual coverage rather than assuming pools are included.",
+    "metrics": {
+      "latency_seconds": 2.27,
+      "input_tokens": 59,
+      "output_tokens": 118,
+      "total_tokens": 177
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 36,
+    "question": "Does the flood policy pay if sewage backs up through my drains during heavy rain but there is no flooding in the area?",
+    "ground_truth_answer": "No. Water that backs up through sewers or drains, discharges or overflows from a sump or sump pump, or seeps or leaks through the property is excluded unless there is a flood in the area and that flood is the proximate cause of the backup, discharge or seepage.",
+    "generated_answer": "# Sewage Backup Coverage\n\n**No, typically a standard flood policy would not cover sewage backup**, even during heavy rain.\n\nHere's why:\n\n- **Flood policies** specifically cover water damage from external flooding (overflowing rivers, heavy rainfall runoff, storm surge, etc.)\n- **Sewage backup** is generally considered a different peril and is usually **excluded** from flood insurance\n\n**What might cover it instead:**\n- **Homeowners insurance** - may cover sewage backup (though some policies exclude it)\n- **Separate sewage backup endorsement** - available as an add-on to either flood or homeowners policies\n- **Service line coverage** - may help with drain/sewer line damage\n\n**I recommend:**\nCheck your specific flood insurance policy details and speak with your insurance agent about whether you need additional sewage backup coverage, as policies vary by insurer and location.",
+    "metrics": {
+      "latency_seconds": 2.93,
+      "input_tokens": 72,
+      "output_tokens": 199,
+      "total_tokens": 271
+    },
+    "classification": "Answered correctly"
+  },
+  {
+    "question_id": 37,
+    "question": "My dog tore a cruciate ligament. How long must the policy have been in force before that is covered — under Embrace and under Nationwide?",
+    "ground_truth_answer": "They differ. Embrace treats a cruciate ligament injury occurring before the end of the illness waiting period or during the first 180 days after the Pet Original Start Date as a pre-existing condition for the life of the policy. Nationwide excludes cruciate ligament or meniscal damage or rupture that occurs during the first twelve calendar months the policy is in effect.",
+    "generated_answer": "I do not know the specific waiting period requirements for cruciate ligament injuries under Embrace and Nationwide policies.\n\nWaiting periods and coverage details vary by:\n- Specific policy type and tier\n- Whether the injury is considered a pre-existing condition\n- When the policy was purchased relative to symptom onset\n\n**I recommend:**\n1. Contacting Embrace and Nationwide directly with your policy number\n2. Reviewing your policy documents for waiting period specifications\n3. Asking specifically about cruciate ligament coverage and any applicable waiting periods\n\nThis will give you accurate information for your particular situation.",
+    "metrics": {
+      "latency_seconds": 2.02,
+      "input_tokens": 78,
+      "output_tokens": 130,
+      "total_tokens": 208
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 38,
+    "question": "I am driving to Canada with my dog. Which of my two policies — the auto policy or the pet policy — still covers me there?",
+    "ground_truth_answer": "The auto policy does; the pet policy does not. The auto policy's territory is the United States of America, its territories or possessions, Puerto Rico, or Canada. The Embrace pet policy's territory is the United States of America, its territories or possessions only, with exceptions only for military deployments and vacations while the named insured's primary residence stays inside that territory.",
+    "generated_answer": "I do not know.\n\nCoverage in Canada depends on the specific terms of your individual policies. While many auto insurance policies do extend to Canada, pet insurance policies vary widely in their geographic coverage. Some pet policies cover incidents in Canada, while others do not.\n\nI recommend:\n1. **Check your auto policy documents** for Canadian coverage details\n2. **Contact your pet insurance provider directly** to confirm whether your policy covers your dog in Canada\n3. **Ask about any limitations** on the types of coverage available outside the US\n\nYour insurance agent can give you definitive answers about your specific policies.",
+    "metrics": {
+      "latency_seconds": 2.16,
+      "input_tokens": 74,
+      "output_tokens": 127,
+      "total_tokens": 201
+    },
+    "classification": "Refused"
+  },
+  {
+    "question_id": 39,
+    "question": "What is the annual premium for the Allstate auto policy for a 35-year-old driver garaged in Richmond, Virginia?",
+    "ground_truth_answer": "Not answerable from the corpus. Premium amounts appear on the Declarations page, which is not part of the policy form in this corpus; the form only says the premium is shown in the Declarations.",
+    "generated_answer": "I do not know.\n\nInsurance premiums vary significantly based on many individual factors including driving history, type of vehicle, coverage levels selected, claims history, credit score, and specific location within Richmond. I don't have access to current Allstate pricing databases or quote tools needed to provide an accurate premium figure.\n\nTo get an actual quote, you would need to contact Allstate directly or use their online quote tool at allstate.com.",
+    "metrics": {
+      "latency_seconds": 1.57,
+      "input_tokens": 74,
+      "output_tokens": 94,
+      "total_tokens": 168
+    },
+    "classification": "Answered correctly"
+  },
+  {
+    "question_id": 40,
+    "question": "What is the dollar Annual Maximum on the Embrace pet policy?",
+    "ground_truth_answer": "Not answerable from the corpus. The policy repeatedly refers to the Annual Maximum 'as shown on the Schedule of Insurance', and that schedule is not part of the document. The only dollar figure in the policy is the $1,000 sub-limit that applies to Dental Illness, which is not the Annual Maximum.",
+    "generated_answer": "I do not know. I don't have access to current, specific information about Embrace pet insurance policy details, including their current Annual Maximum dollar amounts. Policy limits and coverage details can vary by plan type and may change over time.\n\nTo find this information, I recommend:\n1. Visiting Embrace's official website directly\n2. Contacting Embrace customer service\n3. Reviewing your specific policy documents",
+    "metrics": {
+      "latency_seconds": 1.47,
+      "input_tokens": 59,
+      "output_tokens": 89,
+      "total_tokens": 148
+    },
+    "classification": "Refused"
+  }
+]

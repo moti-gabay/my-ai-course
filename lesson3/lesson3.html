@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lesson 3 — RAG &amp; Grounding</title>
+<style>
+  :root{
+    --accent:#ff2e97;
+    --accent2:#7c3aed;
+    --bg:#050509;
+    --ink:#f7f7ff;
+    --muted:#b9b9d6;
+    --card:rgba(255,255,255,.06);
+    --stroke:rgba(255,255,255,.14);
+    --font: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono: "SFMono-Regular",ui-monospace,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- animated background ---------- */
+  .bg{position:fixed;inset:0;overflow:hidden;z-index:0;filter:saturate(1.1)}
+  /* dark scrim over the color blobs so text always sits on a dark base */
+  .bg::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 120% at 50% 40%,rgba(5,5,9,.55),rgba(5,5,9,.86) 70%,rgba(5,5,9,.95));z-index:1}
+  .blob{position:absolute;width:60vmax;height:60vmax;border-radius:50%;filter:blur(80px);opacity:.22;mix-blend-mode:screen;will-change:transform}
+  .b1{background:radial-gradient(circle at 30% 30%,#ff2e97,transparent 60%);top:-15%;left:-10%;animation:float1 18s ease-in-out infinite}
+  .b2{background:radial-gradient(circle at 30% 30%,#00e5ff,transparent 60%);top:20%;right:-15%;animation:float2 22s ease-in-out infinite}
+  .b3{background:radial-gradient(circle at 30% 30%,#ffd000,transparent 60%);bottom:-20%;left:15%;animation:float3 26s ease-in-out infinite}
+  .b4{background:radial-gradient(circle at 30% 30%,#7c3aed,transparent 60%);bottom:-10%;right:5%;animation:float1 20s ease-in-out infinite reverse}
+  .accent-glow{position:fixed;inset:auto;width:70vmax;height:70vmax;border-radius:50%;filter:blur(100px);opacity:.13;z-index:0;
+    background:radial-gradient(circle,var(--accent),transparent 60%);top:50%;left:50%;transform:translate(-50%,-50%);
+    transition:background .7s ease}
+  @keyframes float1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vmax,4vmax) scale(1.15)}}
+  @keyframes float2{0%,100%{transform:translate(0,0) scale(1.1)}50%{transform:translate(-7vmax,5vmax) scale(.9)}}
+  @keyframes float3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(4vmax,-6vmax) scale(1.2)}}
+
+  /* ---------- deck ---------- */
+  .deck{position:relative;z-index:2;height:100%}
+  .slide{
+    position:absolute;inset:0;display:none;
+    padding:6vh 8vw;flex-direction:column;justify-content:center;
+  }
+  .slide.active{display:flex}
+  .slide.leaving{display:flex;animation:slideOut .35s forwards}
+  .slide.active{animation:slideIn .5s cubic-bezier(.2,.8,.2,1)}
+  @keyframes slideIn{from{opacity:0;transform:translateY(24px) scale(.99)}to{opacity:1;transform:none}}
+  @keyframes slideOut{to{opacity:0;transform:translateY(-18px) scale(.99)}}
+
+  .kicker{
+    display:inline-flex;align-items:center;gap:.6ch;align-self:flex-start;
+    font-size:clamp(.7rem,1.4vw,1rem);font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+    color:#0a0a14;background:linear-gradient(90deg,var(--accent),var(--accent2));
+    padding:.45em 1em;border-radius:999px;margin-bottom:.9em;
+    box-shadow:0 6px 24px -8px var(--accent);
+  }
+  h1.title{
+    font-size:clamp(1.9rem,5.2vw,4.2rem);line-height:1.04;margin:0 0 .5em;font-weight:850;letter-spacing:-.02em;
+    background:linear-gradient(120deg,#fff 20%,var(--accent) 120%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  ul.bullets{list-style:none;margin:0;padding:0;max-width:70ch}
+  ul.bullets li{
+    position:relative;padding:.5em 0 .5em 1.6em;
+    font-size:clamp(1rem,2.05vw,1.6rem);line-height:1.4;color:var(--ink);
+  }
+  ul.bullets li::before{
+    content:"";position:absolute;left:0;top:.95em;width:.7em;height:.7em;border-radius:3px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));transform:rotate(45deg);
+    box-shadow:0 0 14px -1px var(--accent);
+  }
+  ul.bullets li ul{list-style:none;margin:.35em 0 0;padding-left:.2em}
+  ul.bullets li ul li{font-size:.86em;color:var(--muted);padding:.28em 0 .28em 1.4em}
+  ul.bullets li ul li::before{width:.5em;height:.5em;top:1em;background:var(--muted);box-shadow:none}
+  strong{color:var(--accent);font-weight:800}
+  em{color:#ffd7ee;font-style:italic}
+  .sub{color:var(--muted);font-size:clamp(.85rem,1.6vw,1.15rem);margin-top:.6em;font-style:italic}
+  code{font-family:var(--mono);background:rgba(255,255,255,.1);color:#ffe08a;padding:.1em .45em;border-radius:6px;font-size:.86em}
+
+  /* reveal animation for content */
+  .reveal{opacity:0;animation:rise .6s cubic-bezier(.2,.75,.2,1) both}
+  .slide.active .reveal{animation-play-state:running}
+  @keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+
+  /* code block */
+  pre{
+    margin:.4em 0 .8em;background:rgba(6,6,18,.82);border:1px solid var(--stroke);
+    border-radius:14px;padding:1em 1.15em;overflow-x:auto;max-width:100%;width:fit-content;
+    box-shadow:0 20px 50px -20px #000, inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  /* size code so the longest line always fits the slide width — no scrolling */
+  pre code{background:none;color:#e9e9ff;font-size:clamp(.62rem,1.7vw,1.05rem);line-height:1.5;padding:0;
+    white-space:pre;display:block}
+  .tok-kw{color:#ff7edb}.tok-str{color:#8affc1}.tok-com{color:#7c85b8;font-style:italic}
+  .tok-fn{color:#7cc7ff}.tok-num{color:#ffd479}
+
+  /* table */
+  table{border-collapse:collapse;margin:.3em 0;max-width:100%;font-size:clamp(.8rem,1.7vw,1.35rem)}
+  th,td{border:1px solid var(--stroke);padding:.55em .9em;text-align:left}
+  thead th{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#0a0a14;font-weight:800}
+  tbody td:first-child{color:var(--muted);font-weight:700}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.04)}
+
+  /* ---------- diagrams ---------- */
+  .diagram{width:100%;max-width:min(92vw,1040px);height:auto;margin:.2em 0 .4em;display:block}
+  .diagram .box{fill:rgba(255,255,255,.07);stroke:rgba(255,255,255,.20);stroke-width:1.5}
+  .diagram .box-hi{fill:rgba(255,255,255,.10);stroke:var(--accent);stroke-width:2}
+  .diagram .lbl{fill:#f7f7ff;font-family:var(--font);font-size:20px;font-weight:700;text-anchor:middle}
+  .diagram .lbl-s{fill:#b9b9d6;font-family:var(--font);font-size:16px;font-weight:600;text-anchor:middle}
+  .diagram .lbl-t{fill:var(--accent);font-family:var(--font);font-size:17px;font-weight:800;text-anchor:middle;letter-spacing:.08em}
+  .diagram .link{stroke:var(--accent);stroke-width:2;fill:none}
+  .diagram .link-d{stroke:rgba(255,255,255,.35);stroke-width:2;fill:none;stroke-dasharray:6 6}
+
+  /* ---------- numbered step cards ---------- */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(.6em,1.3vw,1.15em);
+    width:100%;max-width:1180px;margin:.5em 0 .3em}
+  .step{padding:1em 1.05em 1.15em;border-radius:18px;border:1px solid var(--stroke);
+    background:var(--card);box-shadow:0 20px 50px -28px #000}
+  .step .n{font-size:clamp(1.5rem,3.2vw,2.5rem);font-weight:900;line-height:1;
+    background:linear-gradient(120deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .step .t{margin:.3em 0 .35em;font-weight:900;letter-spacing:.1em;text-transform:uppercase;
+    font-size:clamp(.8rem,1.5vw,1.15rem);color:var(--ink)}
+  .step .d{color:var(--muted);font-size:clamp(.72rem,1.32vw,1rem);line-height:1.42}
+  @media (max-width:900px){.steps{grid-template-columns:repeat(2,1fr)}}
+
+  /* ---------- lead + section slides ---------- */
+  .slide.lead,.slide.section{align-items:center;text-align:center;justify-content:center}
+  .slide.lead .title{font-size:clamp(2.4rem,7vw,5.5rem)}
+  .slide.lead .sub{font-size:clamp(1rem,2.4vw,1.7rem);max-width:60ch}
+  .big-num{
+    font-size:clamp(4rem,16vw,12rem);font-weight:900;line-height:.9;letter-spacing:-.04em;
+    background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 10px 40px var(--accent));
+  }
+  .slide.section .title{font-size:clamp(1.8rem,5.5vw,4rem);margin-top:.1em}
+  .slide.section .kicker{align-self:center}
+
+  /* ladder chips on lead */
+  .chips{display:flex;flex-wrap:wrap;gap:.6em;justify-content:center;margin-top:1.4em}
+  .chip{padding:.5em 1em;border-radius:999px;border:1px solid var(--stroke);background:var(--card);
+    font-weight:700;font-size:clamp(.75rem,1.5vw,1.05rem);color:var(--ink)}
+  .chip b{color:var(--accent)}
+
+  /* ---------- chrome ---------- */
+  .progress{position:fixed;top:0;left:0;height:4px;z-index:10;background:linear-gradient(90deg,var(--accent),var(--accent2));
+    box-shadow:0 0 16px var(--accent);transition:width .4s cubic-bezier(.2,.8,.2,1);width:0}
+  .hud{position:fixed;bottom:18px;right:22px;z-index:10;display:flex;align-items:center;gap:14px;
+    color:var(--muted);font-size:.85rem;font-weight:700}
+  .hud .seg{padding:.3em .8em;border-radius:999px;background:var(--card);border:1px solid var(--stroke);color:var(--ink)}
+  .nav{position:fixed;bottom:16px;left:22px;z-index:10;display:flex;gap:10px}
+  .nav button{
+    width:44px;height:44px;border-radius:50%;border:1px solid var(--stroke);background:var(--card);color:var(--ink);
+    font-size:1.2rem;cursor:pointer;display:grid;place-items:center;transition:.2s;backdrop-filter:blur(6px)
+  }
+  .nav button:hover{background:var(--accent);color:#0a0a14;border-color:transparent;transform:translateY(-2px)}
+  .hint{position:fixed;top:16px;right:20px;z-index:10;color:var(--muted);font-size:.78rem;opacity:.7}
+
+
+  /* short viewports (720p projectors, 768p laptops): tighten so tall slides don't clip */
+  @media (max-height:720px){
+    .slide{padding:4.5vh 7vw}
+    h1.title{font-size:clamp(1.6rem,4.4vw,3.2rem);margin-bottom:.38em}
+    .kicker{margin-bottom:.55em}
+    ul.bullets li{padding:.36em 0 .36em 1.5em;font-size:clamp(.95rem,1.85vw,1.35rem)}
+    ul.bullets li::before{top:.82em}
+    .sub{font-size:clamp(.8rem,1.4vw,1rem);margin-top:.45em}
+    .step{padding:.75em .8em .85em;border-radius:14px}
+    .step .t{margin:.22em 0 .25em}
+    pre{padding:.75em .95em;margin:.3em 0 .6em}
+    pre code{font-size:clamp(.58rem,1.45vw,.92rem);line-height:1.42}
+    table{font-size:clamp(.75rem,1.5vw,1.1rem)}
+    th,td{padding:.4em .75em}
+    .diagram{max-width:min(84vw,880px)}
+    .chips{margin-top:1em}
+  }
+
+  @media (max-width:640px){
+    .slide{padding:8vh 7vw}
+    .hint{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .blob,.accent-glow{animation:none}
+    .reveal,.slide.active{animation:none;opacity:1}
+  }
+</style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <div class="blob b1"></div><div class="blob b2"></div>
+    <div class="blob b3"></div><div class="blob b4"></div>
+  </div>
+  <div class="accent-glow" aria-hidden="true"></div>
+
+  <div class="progress" id="progress"></div>
+  <div class="hint">← → navigate · <b>F</b> fullscreen</div>
+  <div class="deck" id="deck"></div>
+
+  <div class="nav">
+    <button id="prev" title="Previous (←)">‹</button>
+    <button id="next" title="Next (→)">›</button>
+  </div>
+  <div class="hud">
+    <span class="seg" id="segLabel"></span>
+    <span id="counter"></span>
+  </div>
+
+
+<script>
+/* ---------- segment palette ---------- */
+const SEG = {
+  op:  {name:"Opening",                  a:"#ff2e97", b:"#ff8a3d"},
+  s1:  {name:"1 · What RAG is",          a:"#a855f7", b:"#6366f1"},
+  s2:  {name:"2 · Indexing",             a:"#06d6f5", b:"#3b82f6"},
+  brk: {name:"Break",                    a:"#f59e0b", b:"#f43f5e"},
+  s3:  {name:"3 · Retrieve & generate",  a:"#34d399", b:"#06b6d4"},
+  s4:  {name:"4 · Evaluating RAG",       a:"#fb7185", b:"#f97316"},
+  s5:  {name:"5 · Build it",             a:"#38bdf8", b:"#a855f7"},
+};
+
+/* helper for code with tiny highlighting */
+function code(str){
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const KW = /^(from|import|class|def|return|print|for|in|if|not|None)$/;
+  // Single pass over the raw string: each character is consumed exactly once,
+  // so inserted markup can never be re-matched by a later rule.
+  const re = /(#[^\n]*)|("(?:[^"\\\n]|\\.)*")|('(?:[^'\\\n]|\\.)*')|(\b\d+\.?\d*\b)|([A-Za-z_]\w*)/g;
+  let out = "", last = 0, m;
+  while ((m = re.exec(str))){
+    out += esc(str.slice(last, m.index));
+    if      (m[1]) out += '<span class="tok-com">'+esc(m[1])+'</span>';
+    else if (m[2]) out += '<span class="tok-str">'+esc(m[2])+'</span>';
+    else if (m[3]) out += '<span class="tok-str">'+esc(m[3])+'</span>';
+    else if (m[4]) out += '<span class="tok-num">'+m[4]+'</span>';
+    else if (m[5]) out += KW.test(m[5]) ? '<span class="tok-kw">'+m[5]+'</span>' : esc(m[5]);
+    last = m.index + m[0].length;
+  }
+  out += esc(str.slice(last));
+  return '<pre><code>'+out+'</code></pre>';
+}
+
+/* ---------- diagrams (inline SVG, inherit segment accent) ---------- */
+// every slide lives in the DOM at once, so each diagram needs its own marker id —
+// a shared one would resolve to the first marker and inherit that slide's accent color
+const ARROW = id => `<defs><marker id="${id}" viewBox="0 0 10 10" refX="9.5" refY="5"
+  markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>`;
+
+/* the four-step RAG flow */
+const SVG_FLOW = `<svg class="diagram reveal" viewBox="0 0 1000 250" role="img"
+  aria-label="RAG flow: question, retrieve from vector store, top-K chunks, prompt plus LLM, grounded answer">
+  ${ARROW("ar-flow")}
+  <rect class="box" x="330" y="14" width="180" height="56" rx="14"/>
+  <text class="lbl-s" x="420" y="48">📚 vector store</text>
+  <path class="link" d="M420 70 L420 108" marker-end="url(#ar-flow)"/>
+
+  <rect class="box-hi" x="10"  y="112" width="170" height="80" rx="16"/>
+  <text class="lbl" x="95" y="150">Question</text>
+  <text class="lbl-s" x="95" y="174">from the user</text>
+
+  <rect class="box" x="220" y="112" width="170" height="80" rx="16"/>
+  <text class="lbl" x="305" y="150">Retrieve</text>
+  <text class="lbl-s" x="305" y="174">embed · top-K</text>
+
+  <rect class="box" x="430" y="112" width="170" height="80" rx="16"/>
+  <text class="lbl" x="515" y="150">Chunks</text>
+  <text class="lbl-s" x="515" y="174">the evidence</text>
+
+  <rect class="box" x="640" y="112" width="170" height="80" rx="16"/>
+  <text class="lbl" x="725" y="150">Augment</text>
+  <text class="lbl-s" x="725" y="174">chunks + question</text>
+
+  <rect class="box-hi" x="850" y="112" width="140" height="80" rx="16"/>
+  <text class="lbl" x="920" y="150">Answer</text>
+  <text class="lbl-s" x="920" y="174">+ citation</text>
+
+  <path class="link" d="M180 152 L214 152" marker-end="url(#ar-flow)"/>
+  <path class="link" d="M390 152 L424 152" marker-end="url(#ar-flow)"/>
+  <path class="link" d="M600 152 L634 152" marker-end="url(#ar-flow)"/>
+  <path class="link" d="M810 152 L844 152" marker-end="url(#ar-flow)"/>
+  <text class="lbl-s" x="827" y="228">🤖 LLM</text>
+</svg>`;
+
+/* offline indexing vs online inference */
+const SVG_HALVES = `<svg class="diagram reveal" viewBox="0 0 1000 330" role="img"
+  aria-label="Two halves of a RAG system: offline indexing and online inference">
+  ${ARROW("ar-halves")}
+  <text class="lbl-t" x="120" y="26">OFFLINE · ONCE</text>
+  <rect class="box" x="10"  y="44" width="180" height="66" rx="14"/><text class="lbl" x="100" y="84">Parse</text>
+  <rect class="box" x="230" y="44" width="180" height="66" rx="14"/><text class="lbl" x="320" y="84">Chunk</text>
+  <rect class="box" x="450" y="44" width="180" height="66" rx="14"/><text class="lbl" x="540" y="84">Embed</text>
+  <rect class="box-hi" x="670" y="44" width="200" height="66" rx="14"/><text class="lbl" x="770" y="84">Vector store</text>
+  <path class="link" d="M190 77 L224 77" marker-end="url(#ar-halves)"/>
+  <path class="link" d="M410 77 L444 77" marker-end="url(#ar-halves)"/>
+  <path class="link" d="M630 77 L664 77" marker-end="url(#ar-halves)"/>
+
+  <path class="link-d" d="M770 110 L770 168 L320 168 L320 222"/>
+  <text class="lbl-s" x="880" y="150">reused every query</text>
+
+  <text class="lbl-t" x="150" y="204">ONLINE · EVERY QUERY</text>
+  <rect class="box" x="10"  y="222" width="180" height="66" rx="14"/><text class="lbl" x="100" y="262">Embed query</text>
+  <rect class="box-hi" x="230" y="222" width="180" height="66" rx="14"/><text class="lbl" x="320" y="262">Retrieve K</text>
+  <rect class="box" x="450" y="222" width="180" height="66" rx="14"/><text class="lbl" x="540" y="262">Build prompt</text>
+  <rect class="box" x="670" y="222" width="200" height="66" rx="14"/><text class="lbl" x="770" y="262">Generate</text>
+  <path class="link" d="M190 255 L224 255" marker-end="url(#ar-halves)"/>
+  <path class="link" d="M410 255 L444 255" marker-end="url(#ar-halves)"/>
+  <path class="link" d="M630 255 L664 255" marker-end="url(#ar-halves)"/>
+  <text class="lbl-s" x="500" y="316">every one of these boxes is a place your system can break</text>
+</svg>`;
+
+/* the RAG triad */
+const SVG_TRIAD = `<svg class="diagram reveal" viewBox="0 0 820 440" style="max-width:min(66vw,720px)" role="img"
+  aria-label="The RAG triad: context relevance, faithfulness and answer relevance">
+  <path class="link" d="M410 80 L150 300"/>
+  <path class="link" d="M410 80 L670 300"/>
+  <path class="link" d="M250 331 L570 331"/>
+
+  <rect class="box-hi" x="310" y="18"  width="200" height="62" rx="16"/>
+  <text class="lbl" x="410" y="56">Question</text>
+  <rect class="box-hi" x="50"  y="300" width="200" height="62" rx="16"/>
+  <text class="lbl" x="150" y="338">Context</text>
+  <rect class="box-hi" x="570" y="300" width="200" height="62" rx="16"/>
+  <text class="lbl" x="670" y="338">Answer</text>
+
+  <text class="lbl-t" x="250" y="162" style="text-anchor:end">CONTEXT RELEVANCE</text>
+  <text class="lbl-s" x="250" y="184" style="text-anchor:end">did we retrieve the right text?</text>
+
+  <text class="lbl-t" x="570" y="162" style="text-anchor:start">FAITHFULNESS</text>
+  <text class="lbl-s" x="570" y="184" style="text-anchor:start">is the answer supported?</text>
+
+  <text class="lbl-t" x="410" y="396">ANSWER RELEVANCE</text>
+  <text class="lbl-s" x="410" y="418">did it answer the question asked?</text>
+</svg>`;
+
+/* ---------- SLIDES ---------- */
+const slides = [
+/* 1 */ {seg:"op", kind:"lead", label:"1",
+  title:"RAG &amp; Grounding",
+  html:`<div class="sub reveal">Agentic Coding &amp; AI Engineering — Lecture 3 of 5</div>
+        <div class="sub reveal" style="margin-top:.2em"><em>Your model is confident. That's not the same as correct.</em></div>`},
+
+/* 2 */ {seg:"op", kind:"slide", label:"2", kicker:"Where you are",
+  title:"The 5-lecture arc",
+  html:`<ul class="bullets">
+    <li class="reveal">1️⃣ Intro to LLMs &amp; Prompting</li>
+    <li class="reveal">2️⃣ Evaluation-Driven Development</li>
+    <li class="reveal"><strong>3️⃣ RAG &amp; grounding</strong> &nbsp;←&nbsp; <em>you are here</em></li>
+    <li class="reveal">4️⃣ Agents &amp; Orchestrator–Workers</li>
+    <li class="reveal">5️⃣ Multi-Agent Architecture (LangGraph)</li>
+  </ul>
+  <div class="sub reveal">Same project, growing — today it stops guessing and starts <em>reading</em></div>`},
+
+/* 3 */ {seg:"op", kind:"slide", label:"3", kicker:"The core problem",
+  title:"The model doesn't know your world",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Knowledge cutoff</strong> — nothing after training day</li>
+    <li class="reveal"><strong>Private data</strong> — your docs, tickets, catalogue: invisible</li>
+    <li class="reveal"><strong>No grounding</strong> — it answers anyway, fluently, and you can't tell</li>
+    <li class="reveal">🔑 A wrong answer that <em>sounds right</em> is worse than <em>"I don't know"</em></li>
+  </ul>`},
+
+/* 4 */ {seg:"op", kind:"slide", label:"4", kicker:"By the end of today",
+  title:"What you'll walk out with",
+  html:`<ul class="bullets">
+    <li class="reveal">Decide <strong>RAG vs. fine-tuning</strong> — and when you need neither</li>
+    <li class="reveal">Build the pipeline: <strong>parse → chunk → embed → store → retrieve → generate</strong></li>
+    <li class="reveal">Diagnose failures: was it <strong>retrieval</strong> or <strong>generation</strong>?</li>
+    <li class="reveal">Evaluate a RAG system — the <strong>RAG triad</strong> + retrieval metrics</li>
+    <li class="reveal">✅ A grounded Q&amp;A tool over <em>your own</em> corpus, vs. your no-RAG baseline</li>
+  </ul>`},
+
+/* SECTION 1 */ {seg:"s1", kind:"section", label:"§1", num:"1", kicker:"Segment 1 · ~15 min",
+  title:"What RAG is — and when you need it"},
+
+/* 5 */ {seg:"s1", kind:"slide", label:"5", kicker:"One sentence",
+  title:"Retrieval Augmented Generation",
+  html: SVG_FLOW + `<ul class="bullets" style="max-width:80ch">
+    <li class="reveal"><strong>Find</strong> the relevant text → <strong>paste</strong> it into the prompt → <strong>answer from it</strong></li>
+    <li class="reveal">The model stops <em>recalling</em> and starts <em>reading</em> — a much easier task</li>
+  </ul>`},
+
+/* 6 */ {seg:"s1", kind:"slide", label:"6", kicker:"The value",
+  title:"What RAG buys you",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Freshness</strong> — no retraining to know today's data</li>
+    <li class="reveal"><strong>Private knowledge</strong> — your corpus, never in any training set</li>
+    <li class="reveal"><strong>Grounding &amp; citations</strong> — the answer points at a source</li>
+    <li class="reveal"><strong>Cheap to update</strong> — edit a document, re-index, done</li>
+  </ul>
+  <div class="sub reveal">Fine-tune a wrong fact away = weeks. Re-index a document = <em>minutes</em>.</div>`},
+
+/* 7 */ {seg:"s1", kind:"slide", label:"7", kicker:"The analogy",
+  title:"RAG vs. fine-tuning: the parrot",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Fine-tuning (SFT)</strong> — the parrot reads a thousand books → learns <em>how to talk</em></li>
+    <li class="reveal"><strong>RAG</strong> — give the parrot a <strong>search engine</strong> for the library → learns <em>what's true today</em></li>
+    <li class="reveal">SFT teaches <strong>style, tone, structure, format</strong> · RAG supplies <strong>facts</strong></li>
+    <li class="reveal">⚠️ Fine-tune on your Slack and you don't get your roadmap — you get
+      <em>"yeah I'll do it tomorrow 😅"</em></li>
+  </ul>`},
+
+/* 8 */ {seg:"s1", kind:"slide", label:"8", kicker:"The decision",
+  title:"So which one?",
+  html:`<table>
+    <thead><tr><th>You need…</th><th>Use</th></tr></thead>
+    <tbody>
+      <tr><td>Current / private <strong>facts</strong></td><td><strong>RAG</strong></td></tr>
+      <tr><td>A house <strong>voice</strong>, format, writing standard</td><td><strong>Fine-tune</strong></td></tr>
+      <tr><td>Domain <strong>language</strong> (legal, medical, RTL)</td><td><strong>Fine-tune</strong></td></tr>
+      <tr><td><strong>Citations</strong> &amp; auditability</td><td><strong>RAG</strong></td></tr>
+      <tr><td>Both</td><td><strong>Both</strong> — they're orthogonal</td></tr>
+    </tbody>
+  </table>
+  <div class="sub reveal">Order of cost and desperation: <strong>prompt → RAG → fine-tune</strong>. Try a better prompt first. Seriously.</div>`},
+
+/* 9 */ {seg:"s1", kind:"slide", label:"9", kicker:"The obvious objection",
+  title:"\"Why not just paste everything in?\"",
+  html:`<ul class="bullets">
+    <li class="reveal">Context windows are huge now — so why retrieve at all?</li>
+    <li class="reveal"><strong>Cost &amp; latency</strong> scale with every token, on every call</li>
+    <li class="reveal"><strong>Lost in the middle</strong> — recall sags in the centre of a long context <em>(lecture 1)</em></li>
+    <li class="reveal"><strong>Context rot</strong> — more irrelevant text ⇒ <em>worse</em> answers, not better</li>
+    <li class="reveal">🔑 Retrieval is <strong>attention management</strong>, not a storage workaround</li>
+  </ul>`},
+
+/* 10 */ {seg:"s1", kind:"slide", label:"10", kicker:"The whole pipeline",
+  title:"RAG in four steps",
+  html:`<div class="steps">
+    <div class="step reveal"><div class="n">1</div><div class="t">Chunk</div>
+      <div class="d">Segment your data into digestible pieces</div></div>
+    <div class="step reveal"><div class="n">2</div><div class="t">Embed</div>
+      <div class="d">Transform chunks into N-dimensional numeric vectors</div></div>
+    <div class="step reveal"><div class="n">3</div><div class="t">Retrieve</div>
+      <div class="d">Use the query to find the most similar chunks</div></div>
+    <div class="step reveal"><div class="n">4</div><div class="t">Generate</div>
+      <div class="d">Pass query + retrieved chunks to the LLM → grounded answer</div></div>
+  </div>
+  <div class="sub reveal">Steps <strong>1–2</strong> happen <em>once, offline</em> · steps <strong>3–4</strong> happen on <em>every query</em></div>`},
+
+/* 11 */ {seg:"s1", kind:"slide", label:"11", kicker:"The map · photograph this",
+  title:"The two halves of every RAG system",
+  html: SVG_HALVES + `<div class="sub reveal">Anything you <em>can</em> push offline, <strong>push offline</strong> — you only pay for it once</div>`},
+
+/* SECTION 2 */ {seg:"s2", kind:"section", label:"§2", num:"2", kicker:"Segment 2 · ~25 min",
+  title:"Offline indexing",
+  html:`<div class="sub reveal">parse → chunk → embed → store · <em>where most RAG systems are actually lost</em></div>`},
+
+/* 12 */ {seg:"s2", kind:"slide", label:"12", kicker:"Step zero",
+  title:"Parsing: the unglamorous one",
+  html:`<ul class="bullets">
+    <li class="reveal">Real corpora: <strong>PDF · Word · HTML · scans · slides · images</strong></li>
+    <li class="reveal"><strong>PDF is a printing format, not a data format</strong> — glyphs at coordinates, no paragraphs, no reading order</li>
+    <li class="reveal">Killers: <strong>tables</strong>, multi-column layout, headers/footers, scanned pages</li>
+    <li class="reveal"><strong>Hebrew / Arabic (RTL)</strong> — the extra circle of hell</li>
+    <li class="reveal">Tools: <strong>LlamaParse · Amazon Textract · Unstructured</strong> · OCR when needed</li>
+  </ul>
+  <div class="sub reveal">🔑 Garbage in the index is <strong>unrecoverable</strong> — no clever retriever fixes a mangled parse</div>`},
+
+/* 13 */ {seg:"s2", kind:"slide", label:"13", kicker:"The retrieval unit",
+  title:"Chunking: why we cut documents up",
+  html:`<ul class="bullets">
+    <li class="reveal">You retrieve <strong>chunks</strong>, not documents</li>
+    <li class="reveal"><strong>Precision</strong> — return the paragraph, not the 80-page manual</li>
+    <li class="reveal"><strong>Fit</strong> — the context window, and the cost per token</li>
+    <li class="reveal">Embed a whole manual as one vector → the <em>average of 80 pages</em> → matches nothing</li>
+    <li class="reveal">🔑 A chunk should be <strong>one coherent idea</strong> — readable on its own</li>
+  </ul>`},
+
+/* 14 */ {seg:"s2", kind:"slide", label:"14", kicker:"The dial",
+  title:"The chunk size trade-off",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Small chunks</strong> → sharp semantics, precise match
+      <ul><li>but: fragmented context — the definition without the exception</li></ul></li>
+    <li class="reveal"><strong>Large chunks</strong> → context preserved
+      <ul><li>but: diluted meaning, noisy matches, fewer fit in the prompt</li></ul></li>
+    <li class="reveal">Common starting point: <strong>~500–1000 tokens, 10–20% overlap</strong></li>
+    <li class="reveal">There is <strong>no universal right answer</strong> — it's an experiment <em>(hello, EDD)</em></li>
+  </ul>`},
+
+/* 15 */ {seg:"s2", kind:"slide", label:"15", kicker:"Strategies",
+  title:"How to actually chunk",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Fixed-size + overlap</strong> — the sane default (<code>RecursiveCharacterTextSplitter</code>)</li>
+    <li class="reveal"><strong>Structure-aware</strong> — split on headings, sections, Markdown, code blocks</li>
+    <li class="reveal"><strong>Semantic / adaptive</strong> — cut where the topic actually shifts</li>
+    <li class="reveal"><strong>Overlap</strong> — carry ~10–20% across the boundary so ideas survive the cut</li>
+    <li class="reveal">Keep atomic units <strong>whole</strong>: tables, code, list items</li>
+  </ul>
+  <div class="sub reveal">Structure-aware is usually the best value upgrade — the author already drew the boundaries for you</div>`},
+
+/* 16 */ {seg:"s2", kind:"slide", label:"16", kicker:"Highest leverage",
+  title:"Enrich chunks before you embed",
+  html:`<ul class="bullets">
+    <li class="reveal">Attach <strong>metadata</strong>: <code>doc_name · section · page · date · product · language</code></li>
+    <li class="reveal">Prepend context: <strong>document title + section heading</strong> into the chunk text</li>
+    <li class="reveal">Add a one-line <strong>LLM summary</strong> of the chunk — <em>pay once, offline</em></li>
+    <li class="reveal">Metadata enables <strong>filtered retrieval</strong>: <code>company = X AND year = 2024</code></li>
+    <li class="reveal">🔑 Citations come from here — a chunk with <strong>no page number can't be cited</strong></li>
+  </ul>`},
+
+/* 17 */ {seg:"s2", kind:"slide", label:"17", kicker:"Text → geometry",
+  title:"Embeddings",
+  html:`<ul class="bullets">
+    <li class="reveal">Map text to a <strong>point in high-dimensional space</strong> (~384–3072 dims)</li>
+    <li class="reveal">Trained so that <strong>similar meaning ⇒ nearby points</strong></li>
+    <li class="reveal"><em>"How do I return an item?"</em> ≈ <em>"refund process"</em> — <strong>no shared keywords</strong></li>
+    <li class="reveal">⚠️ Weak on <strong>negation</strong> ("not covered by warranty" sits right next to "covered"),
+      <strong>exact IDs</strong>, SKUs, error codes, numbers</li>
+  </ul>
+  <div class="sub reveal">That weakness is exactly why <strong>hybrid search</strong> exists — we'll come back to it</div>`},
+
+/* 18 */ {seg:"s2", kind:"slide", label:"18", kicker:"Multimodal",
+  title:"Anything can be embedded",
+  html:`<figure class="reveal" style="margin:0;display:flex;flex-direction:column;align-items:center;width:100%">
+    <img src="embedding%20flow.png"
+      alt="Multimodal embedding: images, documents and audio pass through one embedding model, become numeric vectors, and land as points in a shared vector space"
+      style="width:auto;max-width:min(88vw,900px);max-height:52vh;border-radius:16px;
+      box-shadow:0 20px 50px -20px #000;background:#fff;display:block">
+    <figcaption class="sub" style="margin-top:.7em;text-align:center;max-width:80ch">
+      Text, images, audio → <strong>one shared vector space</strong> ·
+      similar meaning lands nearby, <em>whatever the original format</em>
+    </figcaption>
+  </figure>`},
+
+/* 19 */ {seg:"s2", kind:"slide", label:"19", kicker:"The metric",
+  title:"Cosine similarity",
+  html:`<ul class="bullets">
+    <li class="reveal">Compare vectors by the <strong>angle</strong> between them, not the distance</li>
+    <li class="reveal"><code>1.0</code> = same direction · <code>0</code> = unrelated · <code>−1</code> = opposite</li>
+    <li class="reveal">Ignores magnitude → <strong>length-insensitive</strong> (long and short chunks compare fairly)</li>
+    <li class="reveal">🔑 The <strong>ranking</strong> matters, the absolute number doesn't — a threshold tuned on one corpus won't transfer</li>
+  </ul>`},
+
+/* 20 */ {seg:"s2", kind:"slide", label:"20", kicker:"The vector space",
+  title:"Similar meaning clusters together",
+  html:`<div style="display:flex;gap:2.2em;align-items:center;flex-wrap:wrap">
+    <img class="reveal" src="vector%20dim.png"
+      alt="A 3-D vector space where boats and ships cluster together, bananas, green apple and pears form another cluster, and football sits apart"
+      style="flex:0 0 auto;max-width:min(46vw,560px);max-height:56vh;border-radius:16px;
+      box-shadow:0 20px 50px -20px #000;background:#fff">
+    <ul class="bullets" style="flex:1 1 320px">
+      <li class="reveal"><strong>Boats</strong> and <strong>ships</strong> sit together · the <strong>fruit</strong> cluster sits elsewhere</li>
+      <li class="reveal">Nobody labelled those groups — the geometry <em>is</em> the meaning</li>
+      <li class="reveal">⚠️ We draw <strong>3 axes</strong> because we can see 3 — the real space has <strong>hundreds</strong></li>
+      <li class="reveal">Retrieval = <em>"which points are nearest my question?"</em></li>
+    </ul>
+  </div>`},
+
+/* 21 */ {seg:"s2", kind:"slide", label:"21", kicker:"Shopping advice",
+  title:"Choosing an embedding model",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>MTEB leaderboard</strong> — the standard benchmark <em>(read it critically 😉)</em></li>
+    <li class="reveal">Trade-offs: <strong>dimensions</strong> ↔ index size · <strong>quality</strong> ↔ latency &amp; cost</li>
+    <li class="reveal"><strong>Multilingual?</strong> — test Hebrew <em>before</em> you commit</li>
+    <li class="reveal"><strong>Don't train your own.</strong> Almost never worth it</li>
+    <li class="reveal">⚠️ <strong>Same model for indexing and querying</strong> — change it ⇒ re-index everything</li>
+  </ul>`},
+
+/* 22 */ {seg:"s2", kind:"slide", label:"22", kicker:"Storage",
+  title:"Vector databases",
+  html:`<ul class="bullets">
+    <li class="reveal">Stores <strong>vector + original text + metadata</strong> — all three matter</li>
+    <li class="reveal">Finds nearest neighbours fast — <strong>ANN</strong> (HNSW), not brute force</li>
+    <li class="reveal"><strong>FAISS</strong> (local, in-process) · <strong>Chroma</strong> (local, easy) · <strong>Pinecone / Weaviate / pgvector</strong> (hosted)</li>
+    <li class="reveal">Plus metadata filters and hybrid indexes</li>
+    <li class="reveal">🔑 <strong>Start local.</strong> You don't have a scale problem yet</li>
+  </ul>`},
+
+/* 23 */ {seg:"s2", kind:"slide", label:"23", kicker:"The whole picture",
+  title:"How the pieces fit",
+  html:`<figure class="reveal" style="margin:0;display:flex;flex-direction:column;align-items:center;width:100%">
+    <img src="rag.png"
+      alt="Full RAG architecture: documents are encoded and indexed into a vector database; a query is encoded, similarity-searched, and the similar documents plus the query become the prompt for the LLM, which returns the response"
+      style="width:auto;max-width:min(84vw,860px);max-height:54vh;border-radius:16px;
+      box-shadow:0 20px 50px -20px #000;background:#fff;display:block">
+    <figcaption class="sub" style="margin-top:.7em;text-align:center;max-width:86ch">
+      Steps <strong>1–2</strong> are everything we just built — <em>offline</em> ·
+      Steps <strong>3–7</strong> are after the break — <em>every query</em>
+    </figcaption>
+  </figure>`},
+
+/* 24 */ {seg:"s2", kind:"slide", label:"24", kicker:"Assembled",
+  title:"The indexing pipeline",
+  html: code(`docs   = PyPDFLoader(path).load()                   # parse
+chunks = RecursiveCharacterTextSplitter(
+             chunk_size=1000, chunk_overlap=150
+         ).split_documents(docs)                    # chunk
+for c in chunks:                                    # enrich
+    c.metadata |= {"doc_name": name, "page": c.metadata["page"]}
+store  = FAISS.from_documents(chunks, embedder)     # embed + store
+store.save_local("index/")`)
+  + `<ul class="bullets">
+    <li class="reveal">Five lines. <strong>The five hardest decisions in your system.</strong></li>
+    <li class="reveal">Runs once, offline — nothing here is on the user's latency path</li>
+  </ul>`},
+
+/* BREAK */ {seg:"brk", kind:"section", label:"25", num:"☕",
+  title:"Break",
+  html:`<div class="sub reveal">~5 min · Next: what happens on <em>every query</em> · keep your laptop handy</div>`},
+
+/* SECTION 3 */ {seg:"s3", kind:"section", label:"§3", num:"3", kicker:"Segment 3 · ~20 min",
+  title:"Online inference",
+  html:`<div class="sub reveal">retrieve → augment → generate · <em>one second to find the right paragraph</em></div>`},
+
+/* 26 */ {seg:"s3", kind:"slide", label:"26", kicker:"The mechanism",
+  title:"Retrieval",
+  html:`<ul class="bullets">
+    <li class="reveal">1. Embed the <strong>query</strong> — same model as the index</li>
+    <li class="reveal">2. Compare against every stored vector (cosine, via ANN)</li>
+    <li class="reveal">3. Return the <strong>top-K</strong> chunks + their metadata</li>
+    <li class="reveal">That's it. The entire <strong>"R"</strong> in RAG.</li>
+  </ul>
+  <div class="sub reveal">Watch the asymmetry: a <em>question</em> and a <em>paragraph</em> are different kinds of text —
+    some models want a <code>query:</code> / <code>passage:</code> prefix. Read the model card.</div>`},
+
+/* 27 */ {seg:"s3", kind:"slide", label:"27", kicker:"Callback: lecture 2",
+  title:"Choosing K",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Small K</strong> → clean context, may miss the answer <em>(low recall)</em></li>
+    <li class="reveal"><strong>Large K</strong> → answer is probably in there, buried in noise <em>(low precision)</em></li>
+    <li class="reveal">Every extra chunk costs <strong>tokens, latency, and attention</strong></li>
+    <li class="reveal">This is <strong>precision vs. recall</strong> from lecture 2 — same trade-off, new costume</li>
+    <li class="reveal">Typical <strong>K = 3–8</strong> — then measure. K and chunk size are <em>not</em> independent</li>
+  </ul>`},
+
+/* 28 */ {seg:"s3", kind:"slide", label:"28", kicker:"The hard ceiling",
+  title:"Garbage in, garbage out",
+  html:`<ul class="bullets">
+    <li class="reveal">The relevant chunk was <strong>never retrieved</strong>
+      <ul><li><em>"it says it doesn't know, but I can see the answer in the PDF"</em></li></ul></li>
+    <li class="reveal">Retrieved chunks are <strong>noisy / off-topic</strong>
+      <ul><li><em>"it answered about a different product"</em></li></ul></li>
+    <li class="reveal">Right chunk, <strong>missing context</strong> — cut too small
+      <ul><li><em>"it gave me half the rule"</em></li></ul></li>
+    <li class="reveal">Right chunks, <strong>wrong order</strong> — the best one ranked 7th</li>
+    <li class="reveal">🔑 If retrieval fails, <strong>no prompt engineering can save you</strong></li>
+  </ul>`},
+
+/* 29 */ {seg:"s3", kind:"slide", label:"29", kicker:"The upgrade path",
+  title:"Retrieval++",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Hybrid search</strong> — dense + BM25 keyword · fixes SKUs, names, error codes</li>
+    <li class="reveal"><strong>Re-ranking</strong> — retrieve 50, re-score with a cross-encoder, keep 5 <em>(biggest single win)</em></li>
+    <li class="reveal"><strong>Multi-query</strong> — LLM rewrites the question 3 ways, union the results</li>
+    <li class="reveal"><strong>Neighbour expansion</strong> — retrieved chunk <em>k</em> ⇒ also fetch <em>k−1, k+1</em></li>
+    <li class="reveal"><strong>Multi-hop</strong> — retrieve, reason, retrieve again → <em>that's an agent (lecture 4)</em></li>
+  </ul>
+  <div class="sub reveal">⚠️ Add them <strong>one at a time</strong> — each costs latency, and together you'll never know which one helped</div>`},
+
+/* 30 */ {seg:"s3", kind:"slide", label:"30", kicker:"Where R meets G",
+  title:"Building the grounded prompt",
+  html: code(`Context:
+[1] (doc: policy_2024.pdf, p.12)
+    <chunk text>
+---
+[2] (doc: faq.md, section: Returns)
+    <chunk text>
+
+Question: {user question}`)
+  + `<ul class="bullets">
+    <li class="reveal"><strong>Clear separators</strong> — without them, the model merges two sources into one confident sentence</li>
+    <li class="reveal"><strong>Carry the metadata</strong> — it's what citations are made of</li>
+    <li class="reveal"><strong>Number the chunks</strong> so the model can cite <code>[1]</code></li>
+  </ul>`},
+
+/* 31 */ {seg:"s3", kind:"slide", label:"31", kicker:"Prompt engineering, aimed",
+  title:"The grounding system prompt",
+  html:`<ul class="bullets">
+    <li class="reveal"><em>"Answer <strong>only</strong> from the context below."</em></li>
+    <li class="reveal"><em>"If the context doesn't contain the answer, <strong>say you don't know</strong>."</em></li>
+    <li class="reveal"><em>"<strong>Cite</strong> the chunk number for every claim."</em></li>
+    <li class="reveal"><em>"Be concise. Don't speculate."</em></li>
+    <li class="reveal">🔑 You are explicitly <strong>licensing refusal</strong> — that's the point</li>
+  </ul>
+  <div class="sub reveal">An <em>"I don't know"</em> is <strong>actionable</strong> (your corpus has a hole).
+    A fabrication is <strong>poison</strong> (it looks like success).</div>`},
+
+/* 32 */ {seg:"s3", kind:"slide", label:"32", kicker:"The other half breaks too",
+  title:"Generation failure modes",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Ignores the context</strong> — answers from parametric memory anyway</li>
+    <li class="reveal"><strong>Hallucinates on top</strong> — real chunk, invented detail</li>
+    <li class="reveal"><strong>Over-relies on one chunk</strong> — usually the first</li>
+    <li class="reveal"><strong>Refuses</strong> when the answer is right there</li>
+    <li class="reveal">😈 <strong>Two wrongs, one right:</strong> bad retrieval + hallucination = correct answer,
+      <em>silently broken system</em></li>
+  </ul>
+  <div class="sub reveal">That last one is the strongest argument there is for <strong>component-level evaluation</strong></div>`},
+
+/* 33 */ {seg:"s3", kind:"slide", label:"33", kicker:"Mitigations",
+  title:"Generation++",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Force citations</strong> — every claim tagged <code>[n]</code></li>
+    <li class="reveal"><strong>Structured output</strong> — Pydantic: <code>answer · sources · confidence</code> <em>(lectures 1 &amp; 2)</em></li>
+    <li class="reveal"><strong>Post-process</strong> — cited <code>[7]</code> but you supplied 5 chunks? Catch it in <em>code</em>, zero LLM calls</li>
+    <li class="reveal"><strong>Verification pass</strong> — a second LLM checks the answer against the context <em>(a judge, inline)</em></li>
+    <li class="reveal">Every safeguard costs <strong>latency and money</strong> — that's a product decision</li>
+  </ul>`},
+
+/* 34 */ {seg:"s3", kind:"slide", label:"34", kicker:"Two jobs, one answer",
+  title:"Retrieval vs. Generation",
+  html:`<div class="steps" style="grid-template-columns:repeat(2,1fr);max-width:920px">
+    <div class="step reveal"><div class="n">1</div><div class="t">Retrieval</div>
+      <div class="d">Getting the <strong>right information</strong></div></div>
+    <div class="step reveal"><div class="n">2</div><div class="t">Generation</div>
+      <div class="d">Using it <strong>correctly</strong></div></div>
+  </div>
+  <ul class="bullets">
+    <li class="reveal"><strong>Retrieval failure → Generation failure</strong></li>
+    <li class="reveal">The reverse isn't true: perfect retrieval still allows a bad answer</li>
+    <li class="reveal">🔑 So they are <em>not</em> equal partners — retrieval is the <strong>ceiling</strong></li>
+  </ul>`},
+
+/* SECTION 4 */ {seg:"s4", kind:"section", label:"§4", num:"4", kicker:"Segment 4 · ~20 min",
+  title:"Evaluating RAG",
+  html:`<div class="sub reveal">Everything from lecture 2 — now with <em>two moving parts</em></div>`},
+
+/* 35 */ {seg:"s4", kind:"slide", label:"35", kicker:"The new difficulty",
+  title:"Why RAG eval is harder",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Two components</strong>, each able to fail independently</li>
+    <li class="reveal">Errors <strong>compound</strong>: 80% retrieval × 90% generation ≈ <strong>72% system</strong></li>
+    <li class="reveal">A good answer <strong>doesn't prove</strong> the pipeline worked</li>
+    <li class="reveal">A bad answer doesn't tell you <strong>which half</strong> broke</li>
+    <li class="reveal">More knobs: chunk size · K · embedding model · prompt · re-ranker</li>
+  </ul>`},
+
+/* 36 */ {seg:"s4", kind:"slide", label:"36", kicker:"Two audiences",
+  title:"End-to-end vs. component-level",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>End-to-end</strong> — what the <em>user</em> experiences. The score that matters.</li>
+    <li class="reveal"><strong>Component</strong> — what the <em>engineer</em> needs. The score that's actionable.</li>
+    <li class="reveal">You need <strong>both</strong>, always</li>
+    <li class="reveal">🔑 If retrieval fails, the system fails — <strong>measure retrieval first</strong></li>
+  </ul>
+  <div class="sub reveal">Most teams do this backwards, tune the prompt for a week, then find the chunker was splitting tables in half</div>`},
+
+/* 37 */ {seg:"s4", kind:"slide", label:"37", kicker:"The framework",
+  title:"The RAG triad",
+  html: SVG_TRIAD + `<div class="sub reveal">⭐ Needs <strong>no ground-truth answers</strong> — you can run all three on <em>production traffic</em>, every day</div>`},
+
+/* 38 */ {seg:"s4", kind:"slide", label:"38", kicker:"With ground truth",
+  title:"Correctness",
+  html:`<ul class="bullets">
+    <li class="reveal">Compare the final answer to a <strong>reference answer</strong></li>
+    <li class="reveal">Scored by an <strong>LLM judge</strong> with a rubric — <em>exactly lecture 2</em></li>
+    <li class="reveal">The truest end-to-end number, and the <strong>most expensive to build</strong></li>
+    <li class="reveal">⚠️ Correct ≠ grounded — always pair it with <strong>faithfulness</strong></li>
+  </ul>
+  <div class="sub reveal">Correctness = did the <em>user</em> get a good answer · Faithfulness = can you <em>trust the process</em></div>`},
+
+/* 39 */ {seg:"s4", kind:"slide", label:"39", kicker:"Component metrics",
+  title:"Evaluating retrieval on its own",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Context recall</strong> — did we retrieve <em>all</em> the needed chunks? <em>(the one to optimise)</em></li>
+    <li class="reveal"><strong>Context precision</strong> — how many retrieved chunks were relevant?
+      <ul><li>⚠️ structurally capped by K — only comparable at the <em>same</em> K</li></ul></li>
+    <li class="reveal"><strong>Hit-rate @ K / page-hit@K</strong> — did any retrieved chunk come from the right page?
+      <ul><li>cheap, objective, no judge, no reference answer — <strong>use this for your sweeps</strong></li></ul></li>
+    <li class="reveal"><strong>MRR / nDCG</strong> — was the right chunk ranked <em>near the top</em>?</li>
+  </ul>`},
+
+/* 40 */ {seg:"s4", kind:"slide", label:"40", kicker:"\"But I have no test set\"",
+  title:"Where eval data comes from",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Synthetic</strong> — LLM writes Q&amp;A pairs from your chunks
+      <ul><li>keep the chunk id → you get retrieval labels for free</li></ul></li>
+    <li class="reveal"><strong>Semi-synthetic</strong> — <em>real</em> user questions + LLM-labelled relevant chunks</li>
+    <li class="reveal"><strong>Human annotation</strong> — domain experts · most accurate, most expensive</li>
+    <li class="reveal">🔑 Start <strong>synthetic today</strong>, replace with <strong>real questions</strong> as they arrive</li>
+  </ul>`},
+
+/* 41 */ {seg:"s4", kind:"slide", label:"41", kicker:"The trap",
+  title:"The single-chunk assumption",
+  html:`<ul class="bullets">
+    <li class="reveal">Synthetic questions are generated <strong>from one chunk</strong> ⇒ answerable <strong>by one chunk</strong></li>
+    <li class="reveal">Real questions are <strong>multi-hop</strong>, comparative, aggregating
+      <ul><li><em>"How did revenue change between 2022 and 2024?"</em></li></ul></li>
+    <li class="reveal">You'll score <strong>90%</strong> on your synthetic set and disappoint real users</li>
+    <li class="reveal">🔑 Hand-write <strong>hard</strong> questions: cross-document · negation · <em>answer not in the corpus</em></li>
+  </ul>
+  <div class="sub reveal">Five hard questions teach you more than five hundred easy ones · report them as a <strong>separate slice</strong></div>`},
+
+/* 42 */ {seg:"s4", kind:"slide", label:"42", kicker:"The landscape",
+  title:"RAG benchmarks &amp; tooling",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>General:</strong> RAGBench · LongBench v2 · MS MARCO / BEIR <em>(retrieval)</em></li>
+    <li class="reveal"><strong>Domain:</strong> FinanceBench <em>(SEC filings + evidence page)</em> · LegalBench-RAG</li>
+    <li class="reveal"><strong>Frameworks:</strong> <strong>Ragas</strong> · TruLens · DeepEval · LangSmith</li>
+    <li class="reveal">Useful for <strong>comparing techniques</strong> — not for predicting <em>your</em> performance</li>
+  </ul>`},
+
+/* 43 */ {seg:"s4", kind:"slide", label:"43", kicker:"Stay suspicious",
+  title:"Why RAG benchmarks lie",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Local questions</strong> — single-chunk answers, no multi-hop</li>
+    <li class="reveal"><strong>Limited scope</strong> — pre-chunked, pre-cleaned text ⇒ they skip <strong>parsing and chunking</strong>,
+      the two steps that actually break real systems</li>
+    <li class="reveal"><strong>No correlation with your data</strong> — real corpora are messier, real users weirder</li>
+    <li class="reveal">😵‍💫 <strong>The vicious cycle:</strong> tune for the benchmark → celebrate → ship →
+      users unhappy → build a new (still flawed) benchmark</li>
+  </ul>
+  <div class="sub reveal">Reward hacking, again. <strong>Your own eval set on your own data</strong> beats every leaderboard.</div>`},
+
+/* 44 */ {seg:"s4", kind:"slide", label:"44", kicker:"Photograph this one too",
+  title:"The debugging playbook",
+  html:`<ul class="bullets">
+    <li class="reveal">1. <strong>Look at the retrieved chunks.</strong> Always first. Ten seconds.</li>
+    <li class="reveal">2. Right chunk missing? → <strong>chunking · embedding · K · hybrid · re-ranker</strong></li>
+    <li class="reveal">3. Chunk present, answer wrong? → <strong>prompt · grounding rules · model</strong></li>
+    <li class="reveal">4. Chunk present, answer right, but <em>unsupported</em>? → <strong>faithfulness problem</strong> <em>(the dangerous one)</em></li>
+    <li class="reveal">5. Change <strong>one thing</strong>, re-run the eval, read the deltas</li>
+  </ul>
+  <div class="sub reveal">🔑 <strong>Retrieval is the bottleneck.</strong> Start there.</div>`},
+
+/* SECTION 5 */ {seg:"s5", kind:"section", label:"§5", num:"5", kicker:"Segment 5 · ~25 min",
+  title:"Tooling &amp; build it yourself"},
+
+/* 45 */ {seg:"s5", kind:"slide", label:"45", kicker:"The library",
+  title:"LangChain (and friends)",
+  html:`<ul class="bullets">
+    <li class="reveal"><code>DocumentLoader → TextSplitter → Embeddings → VectorStore → Retriever → Chain</code></li>
+    <li class="reveal">Swap any box without rewriting the rest — <strong>that's the point</strong>, and that's what makes your experiments cheap</li>
+    <li class="reveal"><strong>Ragas</strong> for RAG metrics · <strong>LangSmith</strong> for tracing the retrieved chunks</li>
+    <li class="reveal">⚠️ Convenient ≠ understood — a pipeline you can't explain is one you can't debug</li>
+  </ul>
+  <div class="sub reveal">You spent the last hour learning the boxes so the abstraction is a <em>convenience</em>, not a <em>blindfold</em></div>`},
+
+/* 46 */ {seg:"s5", kind:"slide", label:"46", kicker:"Hands-on",
+  title:"🛠️ What we're building",
+  html:`<ul class="bullets">
+    <li class="reveal">Your <strong>assignment-1 Q&amp;A tool</strong>, now grounded in a real corpus</li>
+    <li class="reveal">1. <strong>Index</strong> → 2. <strong>Retrieve + generate</strong> → 3. <strong>Evaluate</strong> → 4. <strong>Experiment</strong></li>
+    <li class="reveal">Compare against your <strong>no-RAG baseline</strong> from assignment 1</li>
+    <li class="reveal">Re-run your <strong>eval suite</strong> from assignment 2 + add RAG metrics</li>
+    <li class="reveal"><em>This is the homework. We start it together.</em></li>
+  </ul>
+  <div class="sub reveal">RAG will <strong>hurt</strong> on some questions. Finding those is a <em>result</em>, not a failure.</div>`},
+
+/* 47 */ {seg:"s5", kind:"slide", label:"47", kicker:"Exercise A",
+  title:"Build the index",
+  html:`<ul class="bullets">
+    <li class="reveal">Load your corpus → split → <strong>attach metadata</strong> (<code>doc_name</code>, <code>page</code>, <code>section</code>)</li>
+    <li class="reveal">Baseline settings: <code>chunk_size=1000, chunk_overlap=150</code> — don't tune yet</li>
+    <li class="reveal">Embed + store in <strong>FAISS</strong> or <strong>Chroma</strong>, save to disk</li>
+    <li class="reveal">✅ Sanity check: retrieve for 3 questions and <strong>read the chunks with your own eyes</strong></li>
+  </ul>
+  <div class="sub reveal">No metadata now = no citations and no hit-rate later, and retrofitting means <em>re-indexing</em></div>`},
+
+/* 48 */ {seg:"s5", kind:"slide", label:"48", kicker:"Exercise B",
+  title:"Retrieve + generate",
+  html: code(`class GroundedAnswer(BaseModel):
+    answer: str
+    sources: list[str]      # doc_name + page
+    evidence: list[str]     # the quoted lines it used
+
+def answer_with_rag(query, k=5):
+    chunks = store.similarity_search(query, k=k)
+    prompt = build_prompt(query, chunks)   # separators + metadata
+    return llm(prompt, schema=GroundedAnswer)`)
+  + `<ul class="bullets">
+    <li class="reveal">Use the <strong>grounding system prompt</strong> — only from context · say "I don't know" · cite <code>[n]</code></li>
+    <li class="reveal">✅ Run the <strong>same questions</strong> as assignment 1 and diff the answers side by side</li>
+    <li class="reveal">Try a question your corpus <em>can't</em> answer — does it correctly refuse?</li>
+  </ul>`},
+
+/* 49 */ {seg:"s5", kind:"slide", label:"49", kicker:"Exercise C",
+  title:"Evaluate it",
+  html:`<ul class="bullets">
+    <li class="reveal">Re-run your <strong>assignment-2 eval suite</strong> on the RAG answers — it still applies, unchanged</li>
+    <li class="reveal">Add: <strong>faithfulness</strong> · <strong>context relevance</strong> · <strong>hit-rate @ K</strong></li>
+    <li class="reveal">Build the eval set: <strong>synthetic Q&amp;A from chunks</strong> + a few <strong>hard hand-written</strong> ones</li>
+    <li class="reveal">✅ Deliverable: one table — <strong>no-RAG vs. RAG</strong>, per metric, with the failures listed</li>
+  </ul>`},
+
+/* 50 */ {seg:"s5", kind:"slide", label:"50", kicker:"Exercise D",
+  title:"Three experiments",
+  html:`<ul class="bullets">
+    <li class="reveal">Pick <strong>one</strong> variable: <strong>chunk size</strong> · <strong>top-K</strong> ·
+      <strong>embedding model</strong> · re-ranker · generation prompt</li>
+    <li class="reveal">Write the <strong>hypothesis first</strong>, then change it, then re-measure</li>
+    <li class="reveal">Log every run: <em>hypothesis → change → metric deltas → what you learned</em></li>
+    <li class="reveal">⚠️ On 30 questions, a two-point move is <strong>noise</strong> — bring your bootstrap CI</li>
+    <li class="reveal">🏅 <strong>Bonus:</strong> multi-scale chunking — is one chunk size right for <em>all</em> queries?</li>
+  </ul>`},
+
+/* 51 */ {seg:"s5", kind:"slide", label:"51", kicker:"Remember these",
+  title:"Key takeaways",
+  html:`<ul class="bullets">
+    <li class="reveal">RAG = give the model <strong>the right text</strong>, not <em>more</em> text</li>
+    <li class="reveal"><strong>Fine-tune for style, retrieve for facts</strong> — they're orthogonal</li>
+    <li class="reveal"><strong>Retrieval is the bottleneck.</strong> Look at the chunks first, always</li>
+    <li class="reveal">Evaluate <strong>components</strong>, not just the final answer — a right answer can hide a broken pipeline</li>
+    <li class="reveal">The pipeline is easy; the <strong>decisions</strong> (parse · chunk · K · prompt) are the engineering</li>
+  </ul>`},
+
+/* 52 */ {seg:"s5", kind:"slide", label:"52", kicker:"Next lecture",
+  title:"What if the <em>system</em> decided?",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Lecture 4 — Agents, workflows &amp; orchestration</strong></li>
+    <li class="reveal">Today <em>you</em> decided when to retrieve. Your pipeline is a straight line.</li>
+    <li class="reveal">Retrieval becomes a <strong>tool</strong> — then planning, loops, <strong>worker + evaluator</strong></li>
+    <li class="reveal">Same corpus, same evals — now it <em>acts on its own</em></li>
+  </ul>`},
+
+/* 53 */ {seg:"s5", kind:"lead", label:"53",
+  title:"Step 3 done. ✅",
+  html:`<div class="sub reveal">Your model no longer guesses. It <em>reads</em>, and it <em>cites</em>.</div>
+    <div class="chips">
+      <span class="chip">Prompting</span>
+      <span class="chip">Evals</span>
+      <span class="chip"><b>RAG</b></span>
+      <span class="chip">Agents</span>
+      <span class="chip">Multi-agent</span>
+    </div>
+    <div class="sub reveal" style="margin-top:1.4em"><em>Questions?</em></div>`},
+];
+
+/* ---------- render ---------- */
+const deck = document.getElementById('deck');
+slides.forEach((s,i)=>{
+  const seg = SEG[s.seg];
+  const el = document.createElement('section');
+  el.className = 'slide ' + (s.kind||'slide');
+  el.dataset.i = i;
+  el.style.setProperty('--accent', seg.a);
+  el.style.setProperty('--accent2', seg.b);
+
+  let inner = '';
+  if(s.kind==='section'){
+    inner += `<div class="big-num reveal">${s.num||''}</div>`;
+    if(s.kicker) inner += `<div class="kicker reveal">${s.kicker}</div>`;
+    inner += `<h1 class="title reveal">${s.title}</h1>`;
+    if(s.html) inner += s.html;
+  } else if(s.kind==='lead'){
+    inner += `<h1 class="title reveal">${s.title}</h1>`;
+    if(s.html) inner += s.html;
+  } else {
+    if(s.kicker) inner += `<div class="kicker reveal">${s.kicker}</div>`;
+    inner += `<h1 class="title reveal">${s.title}</h1>`;
+    if(s.html) inner += s.html;
+  }
+  el.innerHTML = inner;
+
+  // stagger reveal children
+  const revs = el.querySelectorAll('.reveal, ul.bullets li, pre, table');
+  revs.forEach((r,idx)=>{ if(!r.classList.contains('reveal')) r.classList.add('reveal');
+    r.style.animationDelay = (0.12 + idx*0.08)+'s'; });
+
+  deck.appendChild(el);
+});
+
+/* ---------- navigation ---------- */
+const slidesEls = [...document.querySelectorAll('.slide')];
+const total = slidesEls.length;
+// highest numbered slide label, for the "n / N" counter (section dividers don't count)
+const lastLabel = Math.max(...slides.map(s=>parseInt(s.label)).filter(Number.isInteger));
+const progress = document.getElementById('progress');
+const counter = document.getElementById('counter');
+const segLabel = document.getElementById('segLabel');
+const glow = document.querySelector('.accent-glow');
+let cur = 0;
+
+function show(n){
+  n = Math.max(0, Math.min(total-1, n));
+  slidesEls.forEach(el=>el.classList.remove('active'));
+  const el = slidesEls[cur=n];
+  // reflow to restart animations
+  void el.offsetWidth;
+  el.classList.add('active');
+  const s = slides[n], seg = SEG[s.seg];
+  progress.style.width = ((n+1)/total*100)+'%';
+  counter.textContent = s.label + ' / ' + lastLabel;
+  segLabel.textContent = seg.name;
+  glow.style.background = `radial-gradient(circle, ${seg.a}, transparent 60%)`;
+  document.documentElement.style.setProperty('--accent', seg.a);
+  document.documentElement.style.setProperty('--accent2', seg.b);
+  location.hash = n;
+}
+function next(){ show(cur+1); }
+function prev(){ show(cur-1); }
+
+document.getElementById('next').onclick = next;
+document.getElementById('prev').onclick = prev;
+
+document.addEventListener('keydown', e=>{
+  if(['ArrowRight','PageDown',' '].includes(e.key)){ e.preventDefault(); next(); }
+  else if(['ArrowLeft','PageUp'].includes(e.key)){ e.preventDefault(); prev(); }
+  else if(e.key==='Home'){ show(0); }
+  else if(e.key==='End'){ show(total-1); }
+  else if(e.key==='f'||e.key==='F'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+});
+
+/* touch swipe */
+let tx=0;
+addEventListener('touchstart',e=>tx=e.changedTouches[0].clientX,{passive:true});
+addEventListener('touchend',e=>{ const dx=e.changedTouches[0].clientX-tx; if(Math.abs(dx)>50){ dx<0?next():prev(); } },{passive:true});
+
+/* start (support deep-link via hash) */
+const start = parseInt(location.hash.slice(1));
+show(Number.isInteger(start)?start:0);
+</script>
+</body>
+</html>

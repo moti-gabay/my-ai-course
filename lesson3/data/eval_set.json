@@ -1,0 +1,643 @@
+[
+  {
+    "id": 1,
+    "question": "What are the minimum limits of liability required by Virginia law under this auto policy?",
+    "reference_answer": "$25,000 for each person, subject to $50,000 for each accident, for bodily injury; and $20,000 for each accident for property damage.",
+    "evidence_doc": "allstate_auto_policy.pdf",
+    "evidence_page": "4",
+    "evidence_docs": [
+      "allstate_auto_policy.pdf"
+    ],
+    "evidence_pages": [
+      "4"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 2,
+    "question": "How much will the auto insurer pay for bail bonds after a covered accident?",
+    "reference_answer": "Up to $250 for the cost of bail bonds required because of an accident, including related traffic law violations, as a supplementary payment that does not reduce the limit of liability.",
+    "evidence_doc": "allstate_auto_policy.pdf",
+    "evidence_page": "4",
+    "evidence_docs": [
+      "allstate_auto_policy.pdf"
+    ],
+    "evidence_pages": [
+      "4"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 3,
+    "question": "If my car loses resale value after being repaired, can I claim that lost value?",
+    "reference_answer": "No. Part D expressly excludes loss due to diminution in value, defined as the actual or perceived loss in market or resale value from a direct and accidental loss.",
+    "evidence_doc": "allstate_auto_policy.pdf",
+    "evidence_page": "13",
+    "evidence_docs": [
+      "allstate_auto_policy.pdf"
+    ],
+    "evidence_pages": [
+      "13"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "negation"
+  },
+  {
+    "id": 4,
+    "question": "What is the most the auto policy will pay for damage to a non-owned trailer?",
+    "reference_answer": "$1,500.",
+    "evidence_doc": "allstate_auto_policy.pdf",
+    "evidence_page": "13",
+    "evidence_docs": [
+      "allstate_auto_policy.pdf"
+    ],
+    "evidence_pages": [
+      "13"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 5,
+    "question": "How far into Mexico does the auto coverage extend, and for how long a trip?",
+    "reference_answer": "Coverage extends to accidents and losses occurring in Mexico within 25 miles of the United States border, and only while the insured is in Mexico on a trip of 10 days or less. Liability insurance from a licensed Mexican insurance company must also be in force.",
+    "evidence_doc": "allstate_auto_policy.pdf",
+    "evidence_page": "16",
+    "evidence_docs": [
+      "allstate_auto_policy.pdf"
+    ],
+    "evidence_pages": [
+      "16"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "synthetic"
+  },
+  {
+    "id": 6,
+    "question": "If I cancel my auto policy myself, how much of the unearned premium do I get back?",
+    "reference_answer": "90% of the pro rata unearned premium. If the insurer cancels, the refund is the full pro rata unearned premium.",
+    "evidence_doc": "allstate_auto_policy.pdf",
+    "evidence_page": "15",
+    "evidence_docs": [
+      "allstate_auto_policy.pdf"
+    ],
+    "evidence_pages": [
+      "15"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "synthetic"
+  },
+  {
+    "id": 7,
+    "question": "Which form number identifies the Allstate auto policy document?",
+    "reference_answer": "AU141756.",
+    "evidence_doc": "allstate_auto_policy.pdf",
+    "evidence_page": "1",
+    "evidence_docs": [
+      "allstate_auto_policy.pdf"
+    ],
+    "evidence_pages": [
+      "1"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "identifier"
+  },
+  {
+    "id": 8,
+    "question": "How long is the illness waiting period on the Embrace pet policy?",
+    "reference_answer": "Fourteen (14) days, starting from the Pet Original Start Date. Conditions that occur during it are excluded as pre-existing conditions.",
+    "evidence_doc": "embrace_pet_policy.pdf",
+    "evidence_page": "3",
+    "evidence_docs": [
+      "embrace_pet_policy.pdf"
+    ],
+    "evidence_pages": [
+      "3"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 9,
+    "question": "Is there a separate annual cap on dental illness treatment under the Embrace policy?",
+    "reference_answer": "Yes. Dental Illness treatment is subject to a $1,000 Annual Maximum sub-limit, in addition to the deductible and reimbursement percentage.",
+    "evidence_doc": "embrace_pet_policy.pdf",
+    "evidence_page": "6",
+    "evidence_docs": [
+      "embrace_pet_policy.pdf"
+    ],
+    "evidence_pages": [
+      "6"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 10,
+    "question": "My vet cleaned my dog's teeth as part of treating diagnosed gum disease. Will Embrace reimburse the cleaning?",
+    "reference_answer": "No. Dental prophylaxis procedures are not covered by the policy, even when done as a treatment for a Dental Illness.",
+    "evidence_doc": "embrace_pet_policy.pdf",
+    "evidence_page": "8",
+    "evidence_docs": [
+      "embrace_pet_policy.pdf"
+    ],
+    "evidence_pages": [
+      "8"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "negation"
+  },
+  {
+    "id": 11,
+    "question": "Which orthopedic conditions does Embrace treat as pre-existing for the life of the policy if they occur early on?",
+    "reference_answer": "Cruciate ligament injury, intervertebral disk disease (IVDD), patellar luxation and canine hip dysplasia, when they occur before the end of the illness waiting period or during the first 180 days after the Pet Original Start Date.",
+    "evidence_doc": "embrace_pet_policy.pdf",
+    "evidence_page": "7",
+    "evidence_docs": [
+      "embrace_pet_policy.pdf"
+    ],
+    "evidence_pages": [
+      "7"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 12,
+    "question": "How long do I have to start a lawsuit against Embrace after a loss?",
+    "reference_answer": "Three (3) years after the date of loss, and only after full compliance with all policy terms.",
+    "evidence_doc": "embrace_pet_policy.pdf",
+    "evidence_page": "16",
+    "evidence_docs": [
+      "embrace_pet_policy.pdf"
+    ],
+    "evidence_pages": [
+      "16"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 13,
+    "question": "Does Embrace cover my pet while I am on vacation outside the United States?",
+    "reference_answer": "The policy territory is the United States of America, its territories or possessions. Exceptions may be made for military deployments and vacations as long as the named insured's primary residence is inside the policy territory.",
+    "evidence_doc": "embrace_pet_policy.pdf",
+    "evidence_page": "14",
+    "evidence_docs": [
+      "embrace_pet_policy.pdf"
+    ],
+    "evidence_pages": [
+      "14"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "synthetic"
+  },
+  {
+    "id": 14,
+    "question": "How much will the Nationwide pet medical plan pay for specialized diagnostic tests in one policy term?",
+    "reference_answer": "No more than seven hundred fifty dollars ($750) per policy term, and only for tests that result in the diagnosis of a covered condition.",
+    "evidence_doc": "nationwide_pet_medical_plan.pdf",
+    "evidence_page": "2",
+    "evidence_docs": [
+      "nationwide_pet_medical_plan.pdf"
+    ],
+    "evidence_pages": [
+      "2"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 15,
+    "question": "In the Nationwide Medical Plan Benefit Schedule, what are the Column A and Column B allowances for diagnosis code 1653?",
+    "reference_answer": "Code 1653 is Heat Stroke (Hyperthermia): $350 Column A Primary Diagnosis Allowance and $140 Column B Secondary Diagnosis Allowance.",
+    "evidence_doc": "nationwide_pet_medical_plan.pdf",
+    "evidence_page": "7",
+    "evidence_docs": [
+      "nationwide_pet_medical_plan.pdf"
+    ],
+    "evidence_pages": [
+      "7"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "identifier"
+  },
+  {
+    "id": 16,
+    "question": "Does Nationwide cover a torn cruciate ligament in the first year of the policy?",
+    "reference_answer": "No. Diagnosis or treatment of cruciate ligament or meniscal damage or rupture that occurs during the first twelve calendar months that the policy is in effect is excluded.",
+    "evidence_doc": "nationwide_pet_medical_plan.pdf",
+    "evidence_page": "3",
+    "evidence_docs": [
+      "nationwide_pet_medical_plan.pdf"
+    ],
+    "evidence_pages": [
+      "3"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 17,
+    "question": "Is hip dysplasia covered under the Nationwide medical plan?",
+    "reference_answer": "No. Any bone or joint condition consisting of or associated with hip dysplasia, or any luxation or subluxation associated with hip dysplasia, is excluded.",
+    "evidence_doc": "nationwide_pet_medical_plan.pdf",
+    "evidence_page": "3",
+    "evidence_docs": [
+      "nationwide_pet_medical_plan.pdf"
+    ],
+    "evidence_pages": [
+      "3"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 18,
+    "question": "How long do I have to bring legal action against Nationwide?",
+    "reference_answer": "Legal action must begin within one year of the pet's first treatment for any condition identified in the action, and only after complying with all policy provisions.",
+    "evidence_doc": "nationwide_pet_medical_plan.pdf",
+    "evidence_page": "5",
+    "evidence_docs": [
+      "nationwide_pet_medical_plan.pdf"
+    ],
+    "evidence_pages": [
+      "5"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 19,
+    "question": "Which company underwrites the Allianz Florida travel plan, and what is the policy form number?",
+    "reference_answer": "Jefferson Insurance Company, 9950 Mayland Drive, Richmond, VA 23233. The form number is 101-P-FL-02-302.",
+    "evidence_doc": "allianz_travel_basic_fl.pdf",
+    "evidence_page": "3",
+    "evidence_docs": [
+      "allianz_travel_basic_fl.pdf"
+    ],
+    "evidence_pages": [
+      "3"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "identifier"
+  },
+  {
+    "id": 20,
+    "question": "How long do I have to file a claim under the Allianz Florida travel plan?",
+    "reference_answer": "90 days from the date of the loss, except as otherwise provided by law.",
+    "evidence_doc": "allianz_travel_basic_fl.pdf",
+    "evidence_page": "20",
+    "evidence_docs": [
+      "allianz_travel_basic_fl.pdf"
+    ],
+    "evidence_pages": [
+      "20"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 21,
+    "question": "I want to scuba dive on my trip. At what point does the Allianz Florida plan stop covering me?",
+    "reference_answer": "Scuba diving below 120 feet (40 meters), or scuba diving without a dive master, is excluded as an extreme, high-risk sport.",
+    "evidence_doc": "allianz_travel_basic_fl.pdf",
+    "evidence_page": "17",
+    "evidence_docs": [
+      "allianz_travel_basic_fl.pdf"
+    ],
+    "evidence_pages": [
+      "17"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 22,
+    "question": "What is the latest point at which coverage under the Allianz Florida plan ends?",
+    "reference_answer": "Coverage ends on the earliest of the scheduled return day, the actual return day if earlier, the day and time the trip is cancelled, or the 365th day of the trip.",
+    "evidence_doc": "allianz_travel_basic_fl.pdf",
+    "evidence_page": "19",
+    "evidence_docs": [
+      "allianz_travel_basic_fl.pdf"
+    ],
+    "evidence_pages": [
+      "19"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 23,
+    "question": "What happens if Allianz does not pay a Florida claim within 20 days of receiving proof of loss?",
+    "reference_answer": "The claimant is entitled to interest at the rate of 12% per annum from the date of the payment agreement. If tender of payment is conditioned on executing a release, interest does not begin to accrue until the executed release is provided.",
+    "evidence_doc": "allianz_travel_basic_fl.pdf",
+    "evidence_page": "20",
+    "evidence_docs": [
+      "allianz_travel_basic_fl.pdf"
+    ],
+    "evidence_pages": [
+      "20"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "synthetic"
+  },
+  {
+    "id": 24,
+    "question": "On the Allianz UK Premier level of cover, what is the maximum for emergency medical expenses?",
+    "reference_answer": "£10 million, with a policy excess of £50.",
+    "evidence_doc": "allianz_travel_policy_wording.pdf",
+    "evidence_page": "6",
+    "evidence_docs": [
+      "allianz_travel_policy_wording.pdf"
+    ],
+    "evidence_pages": [
+      "6"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "synthetic"
+  },
+  {
+    "id": 25,
+    "question": "Does the Allianz UK Budget level of cover include cancellation or curtailment?",
+    "reference_answer": "No. The schedule of cover shows 'No cover' for cancellation or curtailment and for loss of deposit on the Budget level. Cancellation cover appears only on Standard (£2,000) and Premier (£5,000).",
+    "evidence_doc": "allianz_travel_policy_wording.pdf",
+    "evidence_page": "6",
+    "evidence_docs": [
+      "allianz_travel_policy_wording.pdf"
+    ],
+    "evidence_pages": [
+      "6"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "negation"
+  },
+  {
+    "id": 26,
+    "question": "What is the personal liability limit on the Allianz UK Budget level of cover?",
+    "reference_answer": "£1 million, with a £250 policy excess. Standard and Premier both provide £2 million with the same £250 excess.",
+    "evidence_doc": "allianz_travel_policy_wording.pdf",
+    "evidence_page": "6",
+    "evidence_docs": [
+      "allianz_travel_policy_wording.pdf"
+    ],
+    "evidence_pages": [
+      "6"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "synthetic"
+  },
+  {
+    "id": 27,
+    "question": "When exactly does cover end on the Allianz UK travel policy once I get home?",
+    "reference_answer": "Cover for each trip ends on return home, or within 24 hours of return to the home country, or at the expiry of the period of insurance, whichever comes first.",
+    "evidence_doc": "allianz_travel_policy_wording.pdf",
+    "evidence_page": "10",
+    "evidence_docs": [
+      "allianz_travel_policy_wording.pdf"
+    ],
+    "evidence_pages": [
+      "10"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 28,
+    "question": "How quickly must the health plan answer a fast appeal?",
+    "reference_answer": "Within 72 hours after receiving the appeal.",
+    "evidence_doc": "mhbp_health_evidence_of_coverage.pdf",
+    "evidence_page": "86",
+    "evidence_docs": [
+      "mhbp_health_evidence_of_coverage.pdf"
+    ],
+    "evidence_pages": [
+      "86"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 29,
+    "question": "What is the deadline for a standard appeal answer, and is it different for Part B drugs?",
+    "reference_answer": "For standard appeals the plan must answer within 30 calendar days after receiving the appeal; for Part B prescription drugs the answer must come within 7 calendar days.",
+    "evidence_doc": "mhbp_health_evidence_of_coverage.pdf",
+    "evidence_page": "86",
+    "evidence_docs": [
+      "mhbp_health_evidence_of_coverage.pdf"
+    ],
+    "evidence_pages": [
+      "86"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "synthetic"
+  },
+  {
+    "id": 30,
+    "question": "How long after a denial notice do I have to file an appeal with the health plan?",
+    "reference_answer": "The appeal request must be made within 60 calendar days from the date on the written notice of the decision.",
+    "evidence_doc": "mhbp_health_evidence_of_coverage.pdf",
+    "evidence_page": "86",
+    "evidence_docs": [
+      "mhbp_health_evidence_of_coverage.pdf"
+    ],
+    "evidence_pages": [
+      "86"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 31,
+    "question": "Which chapter of the Evidence of Coverage contains the Medical Benefits Chart, and what does it list?",
+    "reference_answer": "Chapter 4, 'Medical Benefits Chart (what is covered and what you pay)'. It is the Schedule of Cost Sharing listing covered medical services and what the member pays for each.",
+    "evidence_doc": "mhbp_health_evidence_of_coverage.pdf",
+    "evidence_page": "36",
+    "evidence_docs": [
+      "mhbp_health_evidence_of_coverage.pdf"
+    ],
+    "evidence_pages": [
+      "36"
+    ],
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 32,
+    "question": "What is the maximum building coverage available for a single-family dwelling under the NFIP Regular Program?",
+    "reference_answer": "$250,000 under the Regular Program. Under the Emergency Program the limit is $35,000 ($50,000 in Alaska, Guam, Hawaii and the U.S. Virgin Islands).",
+    "evidence_doc": "nfip_flood_policy_44cfr61.md",
+    "evidence_page": "N/A",
+    "evidence_docs": [
+      "nfip_flood_policy_44cfr61.md"
+    ],
+    "evidence_pages": [
+      "N/A"
+    ],
+    "evidence_section": "§ 61.6 Maximum amounts of coverage available",
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 33,
+    "question": "What is the minimum flood deductible for a post-FIRM building with $80,000 of building coverage charged full-risk rates?",
+    "reference_answer": "$1,000. The minimum deductible for post-FIRM buildings (and pre-FIRM buildings charged full-risk rates) with building coverage of $100,000 or less is $1,000; above $100,000 it is $1,250.",
+    "evidence_doc": "nfip_flood_policy_44cfr61.md",
+    "evidence_page": "N/A",
+    "evidence_docs": [
+      "nfip_flood_policy_44cfr61.md"
+    ],
+    "evidence_pages": [
+      "N/A"
+    ],
+    "evidence_section": "§ 61.5 Deductibles",
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "synthetic"
+  },
+  {
+    "id": 34,
+    "question": "My house is uninhabitable after a flood. Will the flood policy pay for the hotel I have to live in during repairs?",
+    "reference_answer": "No. The Dwelling Form excludes any additional living expenses incurred while the insured building is being repaired or is unable to be occupied for any reason, because the policy pays only for direct physical loss by or from flood.",
+    "evidence_doc": "nfip_flood_policy_44cfr61.md",
+    "evidence_page": "N/A",
+    "evidence_docs": [
+      "nfip_flood_policy_44cfr61.md"
+    ],
+    "evidence_pages": [
+      "N/A"
+    ],
+    "evidence_section": "Appendix A(1), V. Exclusions, A.5",
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "negation"
+  },
+  {
+    "id": 35,
+    "question": "Is my swimming pool and its pump covered by the flood policy?",
+    "reference_answer": "No. Hot tubs and spas that are not bathroom fixtures, and swimming pools and their equipment such as heaters, filters, pumps and pipes, are not insured wherever located.",
+    "evidence_doc": "nfip_flood_policy_44cfr61.md",
+    "evidence_page": "N/A",
+    "evidence_docs": [
+      "nfip_flood_policy_44cfr61.md"
+    ],
+    "evidence_pages": [
+      "N/A"
+    ],
+    "evidence_section": "Appendix A(1), IV. Property Not Insured, item 14",
+    "answerable": true,
+    "difficulty": "easy",
+    "category": "synthetic"
+  },
+  {
+    "id": 36,
+    "question": "Does the flood policy pay if sewage backs up through my drains during heavy rain but there is no flooding in the area?",
+    "reference_answer": "No. Water that backs up through sewers or drains, discharges or overflows from a sump or sump pump, or seeps or leaks through the property is excluded unless there is a flood in the area and that flood is the proximate cause of the backup, discharge or seepage.",
+    "evidence_doc": "nfip_flood_policy_44cfr61.md",
+    "evidence_page": "N/A",
+    "evidence_docs": [
+      "nfip_flood_policy_44cfr61.md"
+    ],
+    "evidence_pages": [
+      "N/A"
+    ],
+    "evidence_section": "Appendix A(1), V. Exclusions, D.5",
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "synthetic"
+  },
+  {
+    "id": 37,
+    "question": "My dog tore a cruciate ligament. How long must the policy have been in force before that is covered — under Embrace and under Nationwide?",
+    "reference_answer": "They differ. Embrace treats a cruciate ligament injury occurring before the end of the illness waiting period or during the first 180 days after the Pet Original Start Date as a pre-existing condition for the life of the policy. Nationwide excludes cruciate ligament or meniscal damage or rupture that occurs during the first twelve calendar months the policy is in effect.",
+    "evidence_doc": "embrace_pet_policy.pdf",
+    "evidence_page": "7",
+    "evidence_docs": [
+      "embrace_pet_policy.pdf",
+      "nationwide_pet_medical_plan.pdf"
+    ],
+    "evidence_pages": [
+      "7",
+      "3"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "multi_hop"
+  },
+  {
+    "id": 38,
+    "question": "I am driving to Canada with my dog. Which of my two policies — the auto policy or the pet policy — still covers me there?",
+    "reference_answer": "The auto policy does; the pet policy does not. The auto policy's territory is the United States of America, its territories or possessions, Puerto Rico, or Canada. The Embrace pet policy's territory is the United States of America, its territories or possessions only, with exceptions only for military deployments and vacations while the named insured's primary residence stays inside that territory.",
+    "evidence_doc": "allstate_auto_policy.pdf",
+    "evidence_page": "14",
+    "evidence_docs": [
+      "allstate_auto_policy.pdf",
+      "embrace_pet_policy.pdf"
+    ],
+    "evidence_pages": [
+      "14",
+      "14"
+    ],
+    "answerable": true,
+    "difficulty": "hard",
+    "category": "multi_hop"
+  },
+  {
+    "id": 39,
+    "question": "What is the annual premium for the Allstate auto policy for a 35-year-old driver garaged in Richmond, Virginia?",
+    "reference_answer": "Not answerable from the corpus. Premium amounts appear on the Declarations page, which is not part of the policy form in this corpus; the form only says the premium is shown in the Declarations.",
+    "evidence_doc": "",
+    "evidence_page": "",
+    "evidence_docs": [],
+    "evidence_pages": [],
+    "answerable": false,
+    "difficulty": "hard",
+    "category": "unanswerable"
+  },
+  {
+    "id": 40,
+    "question": "What is the dollar Annual Maximum on the Embrace pet policy?",
+    "reference_answer": "Not answerable from the corpus. The policy repeatedly refers to the Annual Maximum 'as shown on the Schedule of Insurance', and that schedule is not part of the document. The only dollar figure in the policy is the $1,000 sub-limit that applies to Dental Illness, which is not the Annual Maximum.",
+    "evidence_doc": "",
+    "evidence_page": "",
+    "evidence_docs": [],
+    "evidence_pages": [],
+    "answerable": false,
+    "difficulty": "hard",
+    "category": "unanswerable"
+  }
+]
