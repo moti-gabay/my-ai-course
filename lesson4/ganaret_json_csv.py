@@ -1,0 +1,247 @@
+import json
+import pandas as pd
+
+tasks = [
+    # --- 6 MULTI-HOP (דורש שתי שליפות או שליפה + חישוב) ---
+    {
+        "task_id": "t01",
+        "task": "If I have a claim for $12,000 for building damage and my deductible is $1,000, what amount will the insurer pay after deductible and 18% VAT?",
+        "success_criteria": "answer contains '12,980' or '12980' (or accurate math result based on deductible/VAT step)",
+        "reference_answer": "($12,000 - $1,000) * 1.18 = $12,980",
+        "type": "multi_hop",
+        "expected_tools": ["search_docs", "calculator"],
+        "answerable": True
+    },
+    {
+        "task_id": "t02",
+        "task": "What is the liability limit for bodily injury per person, and how much would the policy pay in total for 3 injured people if each claims the maximum limit?",
+        "success_criteria": "retrieves bodily injury limit per person and correctly multiplies it by 3 using calculator",
+        "reference_answer": "Multiplies per-person limit by 3",
+        "type": "multi_hop",
+        "expected_tools": ["search_docs", "calculator"],
+        "answerable": True
+    },
+    {
+        "task_id": "t03",
+        "task": "Does the policy cover water damage, and if so, what is the specific deductible for water pipe leaks?",
+        "success_criteria": "mentions water damage coverage status AND water pipe leak deductible",
+        "reference_answer": "Combines water damage coverage terms with deductible clause",
+        "type": "multi_hop",
+        "expected_tools": ["search_docs"],
+        "answerable": True
+    },
+    {
+        "task_id": "t04",
+        "task": "Calculate the total annual premium if the base monthly premium is $150 and there is a 5% administrative surcharge added to the annual total.",
+        "success_criteria": "answer contains '1890' (150 * 12 * 1.05)",
+        "reference_answer": "150 * 12 = 1800; 1800 * 1.05 = 1890",
+        "type": "multi_hop",
+        "expected_tools": ["calculator"],
+        "answerable": True
+    },
+    {
+        "task_id": "t05",
+        "task": "What are the cancellation notice requirements for the insurer, and what percentage of premium is refunded if canceled after 90 days?",
+        "success_criteria": "cites notice period days AND refund percentage/pro-rata calculation",
+        "reference_answer": "Combines notice period clauses with refund terms",
+        "type": "multi_hop",
+        "expected_tools": ["search_docs"],
+        "answerable": True
+    },
+    {
+        "task_id": "t06",
+        "task": "If medical expenses coverage limit is $25,000 and 3 claims of $10,000, $8,000, and $9,000 are filed, what is the remaining coverage capacity?",
+        "success_criteria": "answer contains '0' or states limit exceeded by $2,000",
+        "reference_answer": "25000 - (10000 + 8000 + 9000) = -2000 (Limit reached)",
+        "type": "multi_hop",
+        "expected_tools": ["search_docs", "calculator"],
+        "answerable": True
+    },
+
+    # --- 3 NO_TOOL (תשובה ללא כלים - Over-retrieval test) ---
+    {
+        "task_id": "t07",
+        "task": "Hello! What kind of tasks can you help me with today?",
+        "success_criteria": "tool_calls == 0 and provides clear overview of capabilities",
+        "reference_answer": "Greeting response listing available services without calling tools.",
+        "type": "no_tool",
+        "expected_tools": [],
+        "answerable": True
+    },
+    {
+        "task_id": "t08",
+        "task": "Can you summarize the advice you just provided in our previous sentence?",
+        "success_criteria": "tool_calls == 0",
+        "reference_answer": "Direct conversational summary without tool invocation.",
+        "type": "no_tool",
+        "expected_tools": [],
+        "answerable": True
+    },
+    {
+        "task_id": "t09",
+        "task": "What is the general purpose of an insurance policy deductible?",
+        "success_criteria": "tool_calls == 0",
+        "reference_answer": "General knowledge explanation of insurance deductibles without specific doc retrieval.",
+        "type": "no_tool",
+        "expected_tools": [],
+        "answerable": True
+    },
+
+    # --- 3 UNANSWERABLE (לא קיים בקורפוס / לא ניתן לגזירה) ---
+    {
+        "task_id": "t10",
+        "task": "What is the policy owner's personal credit score required for coverage approval?",
+        "success_criteria": "refused == True",
+        "reference_answer": "Refusal statement that credit score requirements are not mentioned in the corpus.",
+        "type": "unanswerable",
+        "expected_tools": ["search_docs"],
+        "answerable": False
+    },
+    {
+        "task_id": "t11",
+        "task": "Does this insurance policy cover damage caused by orbital space debris impact in 2027?",
+        "success_criteria": "refused == True",
+        "reference_answer": "Clean refusal after bounded search.",
+        "type": "unanswerable",
+        "expected_tools": ["search_docs"],
+        "answerable": False
+    },
+    {
+        "task_id": "t12",
+        "task": "What is the exact repair cost for a 2024 Tesla Model Y bumper at Dan's Auto Shop in Tel Aviv?",
+        "success_criteria": "refused == True",
+        "reference_answer": "Refusal stating specific shop repair costs are unavailable.",
+        "type": "unanswerable",
+        "expected_tools": ["search_docs"],
+        "answerable": False
+    },
+
+    # --- 2 TOOL_FAILS (בדיקת עמידות לכשל ב-Tool) ---
+    {
+        "task_id": "t13",
+        "task": "Search for policy clause 99.B regarding flood coverage.",
+        "success_criteria": "refused == True or states service unavailable without hallucinating",
+        "reference_answer": "Graceful failure message indicating tool failure.",
+        "type": "tool_fails",
+        "expected_tools": ["search_docs"],
+        "answerable": False
+    },
+    {
+        "task_id": "t14",
+        "task": "Calculate the compound interest on $5,000 at 4% for 3 years.",
+        "success_criteria": "refused == True or reports calculation service failure without guessing",
+        "reference_answer": "Graceful error handling when calculator tool fails.",
+        "type": "tool_fails",
+        "expected_tools": ["calculator"],
+        "answerable": False
+    },
+
+    # --- 11 SINGLE (שליפה ישירה / כלי יחיד - Control Group) ---
+    {
+        "task_id": "t15",
+        "task": "What is the minimum limit of liability for property damage under Virginia law in this policy?",
+        "success_criteria": "cites exact dollar limit for property damage under VA law",
+        "reference_answer": "Refers to specific liability amount from policy text.",
+        "type": "single",
+        "expected_tools": ["search_docs"],
+        "answerable": True
+    },
+    {
+        "task_id": "t16",
+        "task": "What is the standard deductible for collision coverage under this policy?",
+        "success_criteria": "cites exact collision deductible dollar amount",
+        "reference_answer": "Collision deductible dollar amount.",
+        "type": "single",
+        "expected_tools": ["search_docs"],
+        "answerable": True
+    },
+    {
+        "task_id": "t17",
+        "task": "How many days does the insured have to report a new vehicle acquisition?",
+        "success_criteria": "contains correct number of days (e.g., 14 or 30 days)",
+        "reference_answer": "Reporting window in days.",
+        "type": "single",
+        "expected_tools": ["search_docs"],
+        "answerable": True
+    },
+    {
+        "task_id": "t18",
+        "task": "Are custom equipment and non-factory modifications covered under Part D?",
+        "success_criteria": "states coverage limitations/exclusions for custom equipment",
+        "reference_answer": "Explanation of custom equipment coverage limits.",
+        "type": "single",
+        "expected_tools": ["search_docs"],
+        "answerable": True
+    },
+    {
+        "task_id": "t19",
+        "task": "What constitutes an 'insured person' under Part A - Liability Coverage?",
+        "success_criteria": "lists definitions of insured person (family members, permissive users)",
+        "reference_answer": "Definition list of insured parties.",
+        "type": "single",
+        "expected_tools": ["search_docs"],
+        "answerable": True
+    },
+    {
+        "task_id": "t20",
+        "task": "What is 4500 divided by 12?",
+        "success_criteria": "answer contains '375'",
+        "reference_answer": "375",
+        "type": "single",
+        "expected_tools": ["calculator"],
+        "answerable": True
+    },
+    {
+        "task_id": "t21",
+        "task": "Does comprehensive coverage pay for windshield repair without a deductible?",
+        "success_criteria": "states policy terms regarding glass repair deductible waiver",
+        "reference_answer": "Windshield deductible policy rule.",
+        "type": "single",
+        "expected_tools": ["search_docs"],
+        "answerable": True
+    },
+    {
+        "task_id": "t22",
+        "task": "What geographical territory is covered under the policy conditions?",
+        "success_criteria": "mentions covered regions (e.g., USA, territories, Canada)",
+        "reference_answer": "Policy territory definitions.",
+        "type": "single",
+        "expected_tools": ["search_docs"],
+        "answerable": True
+    },
+    {
+        "task_id": "t23",
+        "task": "What is the grace period for late premium payments before policy cancellation?",
+        "success_criteria": "states grace period duration in days",
+        "reference_answer": "Payment grace period days.",
+        "type": "single",
+        "expected_tools": ["search_docs"],
+        "answerable": True
+    },
+    {
+        "task_id": "t24",
+        "task": "Does the policy cover towing and labor costs by default?",
+        "success_criteria": "states whether towing is included automatically or requires endorsement",
+        "reference_answer": "Towing coverage status.",
+        "type": "single",
+        "expected_tools": ["search_docs"],
+        "answerable": True
+    },
+    {
+        "task_id": "t25",
+        "task": "What happens if an accident occurs in a state with higher financial responsibility limits than this policy?",
+        "success_criteria": "explains Out-of-State Coverage provision (limits automatically adjust)",
+        "reference_answer": "Out-of-state coverage adjustment clause.",
+        "type": "single",
+        "expected_tools": ["search_docs"],
+        "answerable": True
+    }
+]
+
+# שמירה ל-JSON ו-CSV
+with open("task_set.json", "w", encoding="utf-8") as f:
+    json.dump(tasks, f, indent=2, ensure_ascii=False)
+
+df = pd.DataFrame(tasks)
+df.to_csv("task_set.csv", index=False)
+print(f"✅ Generated {len(tasks)} tasks saved to task_set.json and task_set.csv")

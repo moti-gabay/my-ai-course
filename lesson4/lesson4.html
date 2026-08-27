@@ -1,0 +1,1246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lesson 4 — Workflows, Systems &amp; AI Agents</title>
+<style>
+  :root{
+    --accent:#ff2e97;
+    --accent2:#7c3aed;
+    --bg:#050509;
+    --ink:#f7f7ff;
+    --muted:#b9b9d6;
+    --card:rgba(255,255,255,.06);
+    --stroke:rgba(255,255,255,.14);
+    --font: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono: "SFMono-Regular",ui-monospace,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- animated background ---------- */
+  .bg{position:fixed;inset:0;overflow:hidden;z-index:0;filter:saturate(1.1)}
+  /* dark scrim over the color blobs so text always sits on a dark base */
+  .bg::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 120% at 50% 40%,rgba(5,5,9,.55),rgba(5,5,9,.86) 70%,rgba(5,5,9,.95));z-index:1}
+  .blob{position:absolute;width:60vmax;height:60vmax;border-radius:50%;filter:blur(80px);opacity:.22;mix-blend-mode:screen;will-change:transform}
+  .b1{background:radial-gradient(circle at 30% 30%,#ff2e97,transparent 60%);top:-15%;left:-10%;animation:float1 18s ease-in-out infinite}
+  .b2{background:radial-gradient(circle at 30% 30%,#00e5ff,transparent 60%);top:20%;right:-15%;animation:float2 22s ease-in-out infinite}
+  .b3{background:radial-gradient(circle at 30% 30%,#ffd000,transparent 60%);bottom:-20%;left:15%;animation:float3 26s ease-in-out infinite}
+  .b4{background:radial-gradient(circle at 30% 30%,#7c3aed,transparent 60%);bottom:-10%;right:5%;animation:float1 20s ease-in-out infinite reverse}
+  .accent-glow{position:fixed;inset:auto;width:70vmax;height:70vmax;border-radius:50%;filter:blur(100px);opacity:.13;z-index:0;
+    background:radial-gradient(circle,var(--accent),transparent 60%);top:50%;left:50%;transform:translate(-50%,-50%);
+    transition:background .7s ease}
+  @keyframes float1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vmax,4vmax) scale(1.15)}}
+  @keyframes float2{0%,100%{transform:translate(0,0) scale(1.1)}50%{transform:translate(-7vmax,5vmax) scale(.9)}}
+  @keyframes float3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(4vmax,-6vmax) scale(1.2)}}
+
+  /* ---------- deck ---------- */
+  .deck{position:relative;z-index:2;height:100%}
+  .slide{
+    position:absolute;inset:0;display:none;
+    padding:6vh 8vw;flex-direction:column;justify-content:center;
+  }
+  .slide.active{display:flex}
+  .slide.leaving{display:flex;animation:slideOut .35s forwards}
+  .slide.active{animation:slideIn .5s cubic-bezier(.2,.8,.2,1)}
+  @keyframes slideIn{from{opacity:0;transform:translateY(24px) scale(.99)}to{opacity:1;transform:none}}
+  @keyframes slideOut{to{opacity:0;transform:translateY(-18px) scale(.99)}}
+
+  .kicker{
+    display:inline-flex;align-items:center;gap:.6ch;align-self:flex-start;
+    font-size:clamp(.7rem,1.4vw,1rem);font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+    color:#0a0a14;background:linear-gradient(90deg,var(--accent),var(--accent2));
+    padding:.45em 1em;border-radius:999px;margin-bottom:.9em;
+    box-shadow:0 6px 24px -8px var(--accent);
+  }
+  h1.title{
+    font-size:clamp(1.9rem,5.2vw,4.2rem);line-height:1.04;margin:0 0 .5em;font-weight:850;letter-spacing:-.02em;
+    background:linear-gradient(120deg,#fff 20%,var(--accent) 120%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  ul.bullets{list-style:none;margin:0;padding:0;max-width:70ch}
+  ul.bullets li{
+    position:relative;padding:.5em 0 .5em 1.6em;
+    font-size:clamp(1rem,2.05vw,1.6rem);line-height:1.4;color:var(--ink);
+  }
+  ul.bullets li::before{
+    content:"";position:absolute;left:0;top:.95em;width:.7em;height:.7em;border-radius:3px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));transform:rotate(45deg);
+    box-shadow:0 0 14px -1px var(--accent);
+  }
+  ul.bullets li ul{list-style:none;margin:.35em 0 0;padding-left:.2em}
+  ul.bullets li ul li{font-size:.86em;color:var(--muted);padding:.28em 0 .28em 1.4em}
+  ul.bullets li ul li::before{width:.5em;height:.5em;top:1em;background:var(--muted);box-shadow:none}
+  strong{color:var(--accent);font-weight:800}
+  em{color:#ffd7ee;font-style:italic}
+  .sub{color:var(--muted);font-size:clamp(.85rem,1.6vw,1.15rem);margin-top:.6em;font-style:italic}
+  code{font-family:var(--mono);background:rgba(255,255,255,.1);color:#ffe08a;padding:.1em .45em;border-radius:6px;font-size:.86em}
+
+  /* reveal animation for content */
+  .reveal{opacity:0;animation:rise .6s cubic-bezier(.2,.75,.2,1) both}
+  .slide.active .reveal{animation-play-state:running}
+  @keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+
+  /* code block */
+  pre{
+    margin:.4em 0 .8em;background:rgba(6,6,18,.82);border:1px solid var(--stroke);
+    border-radius:14px;padding:1em 1.15em;overflow-x:auto;max-width:100%;width:fit-content;
+    box-shadow:0 20px 50px -20px #000, inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  /* size code so the longest line always fits the slide width — no scrolling */
+  pre code{background:none;color:#e9e9ff;font-size:clamp(.62rem,1.7vw,1.05rem);line-height:1.5;padding:0;
+    white-space:pre;display:block}
+  .tok-kw{color:#ff7edb}.tok-str{color:#8affc1}.tok-com{color:#7c85b8;font-style:italic}
+  .tok-fn{color:#7cc7ff}.tok-num{color:#ffd479}
+
+  /* table */
+  table{border-collapse:collapse;margin:.3em 0;max-width:100%;font-size:clamp(.8rem,1.7vw,1.35rem)}
+  th,td{border:1px solid var(--stroke);padding:.55em .9em;text-align:left}
+  thead th{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#0a0a14;font-weight:800}
+  tbody td:first-child{color:var(--muted);font-weight:700}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.04)}
+
+  /* ---------- diagrams ---------- */
+  .diagram{width:100%;max-width:min(92vw,1040px);height:auto;margin:.2em 0 .4em;display:block}
+  .diagram .box{fill:rgba(255,255,255,.07);stroke:rgba(255,255,255,.20);stroke-width:1.5}
+  .diagram .box-hi{fill:rgba(255,255,255,.10);stroke:var(--accent);stroke-width:2}
+  .diagram .lbl{fill:#f7f7ff;font-family:var(--font);font-size:20px;font-weight:700;text-anchor:middle}
+  .diagram .lbl-s{fill:#b9b9d6;font-family:var(--font);font-size:16px;font-weight:600;text-anchor:middle}
+  .diagram .lbl-t{fill:var(--accent);font-family:var(--font);font-size:17px;font-weight:800;text-anchor:middle;letter-spacing:.08em}
+  .diagram .link{stroke:var(--accent);stroke-width:2;fill:none}
+  .diagram .link-d{stroke:rgba(255,255,255,.35);stroke-width:2;fill:none;stroke-dasharray:6 6}
+
+  /* ---------- numbered step cards ---------- */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(.6em,1.3vw,1.15em);
+    width:100%;max-width:1180px;margin:.5em 0 .3em}
+  .step{padding:1em 1.05em 1.15em;border-radius:18px;border:1px solid var(--stroke);
+    background:var(--card);box-shadow:0 20px 50px -28px #000}
+  .step .n{font-size:clamp(1.5rem,3.2vw,2.5rem);font-weight:900;line-height:1;
+    background:linear-gradient(120deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .step .t{margin:.3em 0 .35em;font-weight:900;letter-spacing:.1em;text-transform:uppercase;
+    font-size:clamp(.8rem,1.5vw,1.15rem);color:var(--ink)}
+  .step .d{color:var(--muted);font-size:clamp(.72rem,1.32vw,1rem);line-height:1.42}
+  @media (max-width:900px){.steps{grid-template-columns:repeat(2,1fr)}}
+
+  /* ---------- two-column split ---------- */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(1em,2.4vw,2.4em);width:100%;max-width:1180px}
+  .split h3{margin:0 0 .1em;font-size:clamp(.85rem,1.7vw,1.25rem);letter-spacing:.1em;text-transform:uppercase;
+    font-weight:900;color:var(--ink)}
+  .split ul.bullets{max-width:none}
+  @media (max-width:820px){.split{grid-template-columns:1fr;gap:.4em}}
+
+  /* ---------- lead + section slides ---------- */
+  .slide.lead,.slide.section{align-items:center;text-align:center;justify-content:center}
+  .slide.lead .title{font-size:clamp(2.4rem,7vw,5.5rem)}
+  .slide.lead .sub{font-size:clamp(1rem,2.4vw,1.7rem);max-width:60ch}
+  .big-num{
+    font-size:clamp(4rem,16vw,12rem);font-weight:900;line-height:.9;letter-spacing:-.04em;
+    background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 10px 40px var(--accent));
+  }
+  .slide.section .title{font-size:clamp(1.8rem,5.5vw,4rem);margin-top:.1em}
+  .slide.section .kicker{align-self:center}
+
+  /* ladder chips on lead */
+  .chips{display:flex;flex-wrap:wrap;gap:.6em;justify-content:center;margin-top:1.4em}
+  .chip{padding:.5em 1em;border-radius:999px;border:1px solid var(--stroke);background:var(--card);
+    font-weight:700;font-size:clamp(.75rem,1.5vw,1.05rem);color:var(--ink)}
+  .chip b{color:var(--accent)}
+
+  /* ---------- chrome ---------- */
+  .progress{position:fixed;top:0;left:0;height:4px;z-index:10;background:linear-gradient(90deg,var(--accent),var(--accent2));
+    box-shadow:0 0 16px var(--accent);transition:width .4s cubic-bezier(.2,.8,.2,1);width:0}
+  .hud{position:fixed;bottom:18px;right:22px;z-index:10;display:flex;align-items:center;gap:14px;
+    color:var(--muted);font-size:.85rem;font-weight:700}
+  .hud .seg{padding:.3em .8em;border-radius:999px;background:var(--card);border:1px solid var(--stroke);color:var(--ink)}
+  .nav{position:fixed;bottom:16px;left:22px;z-index:10;display:flex;gap:10px}
+  .nav button{
+    width:44px;height:44px;border-radius:50%;border:1px solid var(--stroke);background:var(--card);color:var(--ink);
+    font-size:1.2rem;cursor:pointer;display:grid;place-items:center;transition:.2s;backdrop-filter:blur(6px)
+  }
+  .nav button:hover{background:var(--accent);color:#0a0a14;border-color:transparent;transform:translateY(-2px)}
+  .hint{position:fixed;top:16px;right:20px;z-index:10;color:var(--muted);font-size:.78rem;opacity:.7}
+
+
+  /* short viewports (720p projectors, 768p laptops): tighten so tall slides don't clip */
+  @media (max-height:720px){
+    .slide{padding:4.5vh 7vw}
+    h1.title{font-size:clamp(1.6rem,4.4vw,3.2rem);margin-bottom:.38em}
+    .kicker{margin-bottom:.55em}
+    ul.bullets li{padding:.36em 0 .36em 1.5em;font-size:clamp(.95rem,1.85vw,1.35rem)}
+    ul.bullets li::before{top:.82em}
+    .sub{font-size:clamp(.8rem,1.4vw,1rem);margin-top:.45em}
+    .step{padding:.75em .8em .85em;border-radius:14px}
+    .step .t{margin:.22em 0 .25em}
+    pre{padding:.75em .95em;margin:.3em 0 .6em}
+    pre code{font-size:clamp(.58rem,1.45vw,.92rem);line-height:1.42}
+    table{font-size:clamp(.75rem,1.5vw,1.1rem)}
+    th,td{padding:.4em .75em}
+    .diagram{max-width:min(84vw,880px)}
+    .chips{margin-top:1em}
+  }
+
+  @media (max-width:640px){
+    .slide{padding:8vh 7vw}
+    .hint{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .blob,.accent-glow{animation:none}
+    .reveal,.slide.active{animation:none;opacity:1}
+  }
+</style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <div class="blob b1"></div><div class="blob b2"></div>
+    <div class="blob b3"></div><div class="blob b4"></div>
+  </div>
+  <div class="accent-glow" aria-hidden="true"></div>
+
+  <div class="progress" id="progress"></div>
+  <div class="hint">← → navigate · <b>F</b> fullscreen</div>
+  <div class="deck" id="deck"></div>
+
+  <div class="nav">
+    <button id="prev" title="Previous (←)">‹</button>
+    <button id="next" title="Next (→)">›</button>
+  </div>
+  <div class="hud">
+    <span class="seg" id="segLabel"></span>
+    <span id="counter"></span>
+  </div>
+
+
+<script>
+/* ---------- segment palette ---------- */
+const SEG = {
+  op:  {name:"Opening",                  a:"#ff2e97", b:"#ff8a3d"},
+  s1:  {name:"1 · Tools & MCP",          a:"#a855f7", b:"#6366f1"},
+  s2:  {name:"2 · Workflows",            a:"#06d6f5", b:"#3b82f6"},
+  brk: {name:"Break",                    a:"#f59e0b", b:"#f43f5e"},
+  s3:  {name:"3 · Agents",               a:"#34d399", b:"#06b6d4"},
+  s4:  {name:"4 · Evaluating agents",    a:"#fb7185", b:"#f97316"},
+  s5:  {name:"5 · Build it",             a:"#38bdf8", b:"#a855f7"},
+};
+
+/* helper for code with tiny highlighting */
+function code(str){
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const KW = /^(from|import|class|def|return|print|for|in|if|not|None|while|else|elif|True|False)$/;
+  // Single pass over the raw string: each character is consumed exactly once,
+  // so inserted markup can never be re-matched by a later rule.
+  const re = /(#[^\n]*)|("(?:[^"\\\n]|\\.)*")|('(?:[^'\\\n]|\\.)*')|(\b\d+\.?\d*\b)|([A-Za-z_]\w*)/g;
+  let out = "", last = 0, m;
+  while ((m = re.exec(str))){
+    out += esc(str.slice(last, m.index));
+    if      (m[1]) out += '<span class="tok-com">'+esc(m[1])+'</span>';
+    else if (m[2]) out += '<span class="tok-str">'+esc(m[2])+'</span>';
+    else if (m[3]) out += '<span class="tok-str">'+esc(m[3])+'</span>';
+    else if (m[4]) out += '<span class="tok-num">'+m[4]+'</span>';
+    else if (m[5]) out += KW.test(m[5]) ? '<span class="tok-kw">'+m[5]+'</span>' : esc(m[5]);
+    last = m.index + m[0].length;
+  }
+  out += esc(str.slice(last));
+  return '<pre><code>'+out+'</code></pre>';
+}
+
+/* ---------- diagrams (inline SVG, inherit segment accent) ---------- */
+// every slide lives in the DOM at once, so each diagram needs its own marker id —
+// a shared one would resolve to the first marker and inherit that slide's accent color
+const ARROW = id => `<defs><marker id="${id}" viewBox="0 0 10 10" refX="9.5" refY="5"
+  markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>`;
+
+/* who owns which part of a tool call */
+const SVG_TOOL = `<svg class="diagram reveal" viewBox="0 0 1000 275" role="img"
+  aria-label="Tool use anatomy: you define the tool, the model decides which to call, your code runs it and feeds the result back">
+  ${ARROW("ar-tool")}
+  <text class="lbl-t" x="155" y="62">YOU DEFINE IT</text>
+  <text class="lbl-t" x="500" y="62">THE MODEL DECIDES</text>
+  <text class="lbl-t" x="845" y="62">YOUR CODE RUNS IT</text>
+
+  <rect class="box-hi" x="30"  y="82" width="250" height="92" rx="16"/>
+  <text class="lbl"   x="155" y="120">1 · Tool</text>
+  <text class="lbl-s" x="155" y="148">name · description · schema</text>
+
+  <rect class="box" x="375" y="82" width="250" height="92" rx="16"/>
+  <text class="lbl"   x="500" y="120">2 · Decision</text>
+  <text class="lbl-s" x="500" y="148">which one? which args?</text>
+
+  <rect class="box-hi" x="720" y="82" width="250" height="92" rx="16"/>
+  <text class="lbl"   x="845" y="120">3 · Orchestration</text>
+  <text class="lbl-s" x="845" y="148">run it · feed the result back</text>
+
+  <path class="link" d="M280 128 L369 128" marker-end="url(#ar-tool)"/>
+  <path class="link" d="M625 128 L714 128" marker-end="url(#ar-tool)"/>
+  <path class="link" d="M845 174 L845 224 L500 224 L500 180" marker-end="url(#ar-tool)"/>
+  <text class="lbl-s" x="672" y="248">repeat until the model stops asking for tools</text>
+</svg>`;
+
+/* the agent loop */
+const SVG_AGENTLOOP = `<svg class="diagram reveal" viewBox="0 0 1000 300" role="img"
+  aria-label="The agent loop: goal, reason, act, observe, and either finish or loop back to reason">
+  ${ARROW("ar-loop")}
+  <rect class="box-hi" x="14"  y="96" width="146" height="84" rx="16"/>
+  <text class="lbl" x="87" y="132">Goal</text>
+  <text class="lbl-s" x="87" y="158">from the user</text>
+
+  <rect class="box" x="212" y="96" width="180" height="84" rx="16"/>
+  <text class="lbl" x="302" y="132">Reason</text>
+  <text class="lbl-s" x="302" y="158">what next, and why?</text>
+
+  <rect class="box" x="440" y="96" width="160" height="84" rx="16"/>
+  <text class="lbl" x="520" y="132">Act</text>
+  <text class="lbl-s" x="520" y="158">call a tool</text>
+
+  <rect class="box" x="648" y="96" width="180" height="84" rx="16"/>
+  <text class="lbl" x="738" y="132">Observe</text>
+  <text class="lbl-s" x="738" y="158">the real result</text>
+
+  <rect class="box-hi" x="876" y="96" width="112" height="84" rx="16"/>
+  <text class="lbl" x="932" y="132">Done</text>
+  <text class="lbl-s" x="932" y="158">answer</text>
+
+  <path class="link" d="M160 138 L206 138" marker-end="url(#ar-loop)"/>
+  <path class="link" d="M392 138 L434 138" marker-end="url(#ar-loop)"/>
+  <path class="link" d="M600 138 L642 138" marker-end="url(#ar-loop)"/>
+  <path class="link" d="M828 138 L870 138" marker-end="url(#ar-loop)"/>
+  <text class="lbl-s" x="852" y="86">model says so</text>
+
+  <path class="link" d="M738 180 L738 244 L302 244 L302 184" marker-end="url(#ar-loop)"/>
+  <text class="lbl-s" x="520" y="270">not done → reason again, now with one more observation in context</text>
+</svg>`;
+
+/* prompt chaining */
+const SVG_CHAIN = `<svg class="diagram reveal" viewBox="0 0 1000 190" role="img"
+  aria-label="Prompt chaining: three LLM calls in a fixed sequence with validation gates between them">
+  ${ARROW("ar-chain")}
+  <rect class="box-hi" x="20"  y="52" width="180" height="80" rx="16"/>
+  <text class="lbl" x="110" y="90">LLM 1</text><text class="lbl-s" x="110" y="114">translate</text>
+  <rect class="box" x="248" y="66" width="110" height="52" rx="12"/>
+  <text class="lbl-s" x="303" y="97">gate ✓</text>
+  <rect class="box-hi" x="406" y="52" width="180" height="80" rx="16"/>
+  <text class="lbl" x="496" y="90">LLM 2</text><text class="lbl-s" x="496" y="114">tone-check</text>
+  <rect class="box" x="634" y="66" width="110" height="52" rx="12"/>
+  <text class="lbl-s" x="689" y="97">gate ✓</text>
+  <rect class="box-hi" x="792" y="52" width="180" height="80" rx="16"/>
+  <text class="lbl" x="882" y="90">LLM 3</text><text class="lbl-s" x="882" y="114">format email</text>
+
+  <path class="link" d="M200 92 L242 92" marker-end="url(#ar-chain)"/>
+  <path class="link" d="M358 92 L400 92" marker-end="url(#ar-chain)"/>
+  <path class="link" d="M586 92 L628 92" marker-end="url(#ar-chain)"/>
+  <path class="link" d="M744 92 L786 92" marker-end="url(#ar-chain)"/>
+  <text class="lbl-s" x="500" y="172">latency = the sum of every step · errors compound without the gates</text>
+</svg>`;
+
+/* routing */
+const SVG_ROUTE = `<svg class="diagram reveal" viewBox="0 0 1000 300" role="img"
+  aria-label="Routing: a classifier dispatches each input to a cheap model, a strong model, or a human">
+  ${ARROW("ar-route")}
+  <rect class="box-hi" x="14" y="112" width="160" height="80" rx="16"/>
+  <text class="lbl" x="94" y="150">Input</text><text class="lbl-s" x="94" y="174">a request</text>
+
+  <rect class="box-hi" x="256" y="112" width="180" height="80" rx="16"/>
+  <text class="lbl" x="346" y="150">Router</text><text class="lbl-s" x="346" y="174">classify</text>
+
+  <rect class="box" x="580" y="18"  width="300" height="70" rx="14"/>
+  <text class="lbl" x="730" y="52">cheap model</text><text class="lbl-s" x="730" y="76">FAQ · ~70% of traffic</text>
+  <rect class="box" x="580" y="118" width="300" height="70" rx="14"/>
+  <text class="lbl" x="730" y="152">strong model</text><text class="lbl-s" x="730" y="176">complex complaint</text>
+  <rect class="box" x="580" y="218" width="300" height="70" rx="14"/>
+  <text class="lbl" x="730" y="252">human</text><text class="lbl-s" x="730" y="276">refund · irreversible</text>
+
+  <path class="link" d="M174 152 L250 152" marker-end="url(#ar-route)"/>
+  <path class="link" d="M436 148 L500 148 L500 53 L574 53"  marker-end="url(#ar-route)"/>
+  <path class="link" d="M436 152 L574 152" marker-end="url(#ar-route)"/>
+  <path class="link" d="M436 156 L500 156 L500 253 L574 253" marker-end="url(#ar-route)"/>
+  <text class="lbl-t" x="120" y="60">BIGGEST COST LEVER</text>
+</svg>`;
+
+/* parallelization */
+const SVG_PARALLEL = `<svg class="diagram reveal" viewBox="0 0 1000 300" role="img"
+  aria-label="Parallelization: one task split into independent subtasks run concurrently, then aggregated">
+  ${ARROW("ar-par")}
+  <rect class="box-hi" x="14" y="112" width="160" height="80" rx="16"/>
+  <text class="lbl" x="94" y="150">Task</text><text class="lbl-s" x="94" y="174">10 articles</text>
+
+  <rect class="box" x="330" y="26"  width="240" height="66" rx="14"/><text class="lbl" x="450" y="66">subtask</text>
+  <rect class="box" x="330" y="118" width="240" height="66" rx="14"/><text class="lbl" x="450" y="158">subtask</text>
+  <rect class="box" x="330" y="210" width="240" height="66" rx="14"/><text class="lbl" x="450" y="250">subtask</text>
+
+  <rect class="box-hi" x="720" y="112" width="260" height="80" rx="16"/>
+  <text class="lbl" x="850" y="150">Aggregate</text><text class="lbl-s" x="850" y="174">merge · vote · pick</text>
+
+  <path class="link" d="M174 140 L250 140 L250 59  L324 59"  marker-end="url(#ar-par)"/>
+  <path class="link" d="M174 152 L324 152" marker-end="url(#ar-par)"/>
+  <path class="link" d="M174 164 L250 164 L250 243 L324 243" marker-end="url(#ar-par)"/>
+  <path class="link" d="M570 59  L644 59  L644 140 L714 140" marker-end="url(#ar-par)"/>
+  <path class="link" d="M570 152 L714 152" marker-end="url(#ar-par)"/>
+  <path class="link" d="M570 243 L644 243 L644 164 L714 164" marker-end="url(#ar-par)"/>
+  <text class="lbl-t" x="500" y="296">LATENCY: SUM → MAX</text>
+</svg>`;
+
+/* orchestrator-workers */
+const SVG_ORCH = `<svg class="diagram reveal" viewBox="0 0 1000 320" role="img"
+  aria-label="Orchestrator-workers: an orchestrator LLM decomposes the task at runtime, dispatches workers, and a synthesiser merges their results">
+  ${ARROW("ar-orch")}
+  <rect class="box-hi" x="14" y="118" width="210" height="84" rx="16"/>
+  <text class="lbl" x="119" y="156">Orchestrator</text><text class="lbl-s" x="119" y="182">decomposes · dispatches</text>
+
+  <rect class="box" x="340" y="26"  width="230" height="66" rx="14"/><text class="lbl" x="455" y="66">worker</text>
+  <rect class="box" x="340" y="126" width="230" height="66" rx="14"/><text class="lbl" x="455" y="166">worker</text>
+  <rect class="box" x="340" y="226" width="230" height="66" rx="14"/><text class="lbl" x="455" y="266">worker</text>
+
+  <rect class="box-hi" x="720" y="118" width="260" height="84" rx="16"/>
+  <text class="lbl" x="850" y="156">Synthesiser</text><text class="lbl-s" x="850" y="182">reconcile · answer</text>
+
+  <path class="link" d="M224 146 L280 146 L280 59  L334 59"  marker-end="url(#ar-orch)"/>
+  <path class="link" d="M224 159 L334 159" marker-end="url(#ar-orch)"/>
+  <path class="link" d="M224 172 L280 172 L280 259 L334 259" marker-end="url(#ar-orch)"/>
+  <path class="link" d="M570 59  L648 59  L648 146 L714 146" marker-end="url(#ar-orch)"/>
+  <path class="link" d="M570 159 L714 159" marker-end="url(#ar-orch)"/>
+  <path class="link" d="M570 259 L648 259 L648 172 L714 172" marker-end="url(#ar-orch)"/>
+  <text class="lbl-t" x="500" y="314">HOW MANY WORKERS, AND WHAT EACH DOES — DECIDED AT RUNTIME</text>
+</svg>`;
+
+/* evaluator-optimizer */
+const SVG_EVALOPT = `<svg class="diagram reveal" viewBox="0 0 1000 260" role="img"
+  aria-label="Evaluator-optimizer: a generator drafts, an evaluator critiques against criteria, and the loop repeats until accepted">
+  ${ARROW("ar-eo")}
+  <rect class="box-hi" x="40"  y="70" width="230" height="90" rx="16"/>
+  <text class="lbl" x="155" y="108">Generator</text><text class="lbl-s" x="155" y="136">drafts a solution</text>
+
+  <rect class="box" x="390" y="70" width="230" height="90" rx="16"/>
+  <text class="lbl" x="505" y="108">Evaluator</text><text class="lbl-s" x="505" y="136">critique vs. criteria</text>
+
+  <rect class="box-hi" x="740" y="70" width="220" height="90" rx="16"/>
+  <text class="lbl" x="850" y="108">Accepted</text><text class="lbl-s" x="850" y="136">ship it</text>
+
+  <path class="link" d="M270 115 L384 115" marker-end="url(#ar-eo)"/>
+  <path class="link" d="M620 115 L734 115" marker-end="url(#ar-eo)"/>
+  <text class="lbl-s" x="327" y="98">draft</text>
+  <text class="lbl-s" x="677" y="98">pass ✓</text>
+
+  <path class="link" d="M505 160 L505 208 L155 208 L155 166" marker-end="url(#ar-eo)"/>
+  <text class="lbl-s" x="330" y="232">reject ✗ → here is what's wrong, try again <tspan class="lbl-t">(cap the iterations)</tspan></text>
+</svg>`;
+
+/* langgraph: nodes, conditional edges, cycles, shared state */
+const SVG_GRAPH = `<svg class="diagram reveal" viewBox="0 0 1000 305" style="max-width:min(80vw,880px)" role="img"
+  aria-label="A LangGraph agent: a model node, a tools node, a conditional edge to the end, and a cycle back to the model">
+  ${ARROW("ar-graph")}
+  <rect class="box" x="20" y="128" width="150" height="80" rx="16"/>
+  <text class="lbl" x="95" y="164">START</text><text class="lbl-s" x="95" y="190">the goal</text>
+
+  <rect class="box-hi" x="290" y="128" width="190" height="80" rx="16"/>
+  <text class="lbl" x="385" y="164">agent</text><text class="lbl-s" x="385" y="190">LLM node</text>
+
+  <rect class="box-hi" x="640" y="30" width="230" height="76" rx="16"/>
+  <text class="lbl" x="755" y="66">tools</text><text class="lbl-s" x="755" y="90">retriever · calc · api</text>
+
+  <rect class="box" x="640" y="228" width="230" height="72" rx="16"/>
+  <text class="lbl" x="755" y="262">END</text><text class="lbl-s" x="755" y="286">the answer</text>
+
+  <path class="link" d="M170 168 L284 168" marker-end="url(#ar-graph)"/>
+
+  <path class="link" d="M480 148 L560 148 L560 68 L634 68" marker-end="url(#ar-graph)"/>
+  <text class="lbl-t" x="755" y="18">TOOL CALL</text>
+
+  <path class="link" d="M480 188 L560 188 L560 264 L634 264" marker-end="url(#ar-graph)"/>
+  <text class="lbl-t" x="755" y="218">NO TOOL CALL</text>
+
+  <path class="link-d" d="M755 106 L755 168 L486 168" marker-end="url(#ar-graph)"/>
+  <text class="lbl-s" x="622" y="150">observation back in</text>
+</svg>`;
+
+/* ---------- SLIDES ---------- */
+const slides = [
+/* 1 */ {seg:"op", kind:"lead", label:"1",
+  title:"Workflows, Systems &amp; AI Agents",
+  html:`<div class="sub reveal">Agentic Coding &amp; AI Engineering — Lecture 4 of 5</div>
+        <div class="sub reveal" style="margin-top:.2em"><em>Most "agent" problems are workflow problems.</em></div>`},
+
+/* 2 */ {seg:"op", kind:"slide", label:"2", kicker:"Where you are",
+  title:"The 5-lecture arc",
+  html:`<ul class="bullets">
+    <li class="reveal">1️⃣ Intro to LLMs &amp; Prompting</li>
+    <li class="reveal">2️⃣ Evaluation-Driven Development</li>
+    <li class="reveal">3️⃣ RAG &amp; Grounding</li>
+    <li class="reveal"><strong>4️⃣ Agents, Workflows &amp; Orchestration</strong> &nbsp;←&nbsp; <em>you are here</em></li>
+    <li class="reveal">5️⃣ Multi-Agent Architecture</li>
+  </ul>
+  <div class="sub reveal">Your retriever isn't replaced — it becomes a <strong>tool</strong>.
+    Today the system gets <em>control flow</em>.</div>`},
+
+/* 3 */ {seg:"op", kind:"slide", label:"3", kicker:"The core problem",
+  title:"Your pipeline is a straight line",
+  html:`<ul class="bullets">
+    <li class="reveal">Last week: <code>query → retrieve → generate</code> — <em>always, exactly once</em></li>
+    <li class="reveal">❌ <em>"Is our refund policy longer than the 2024 contract's?"</em> → needs <strong>two lookups</strong></li>
+    <li class="reveal">❌ <em>"What's 18% VAT on item X?"</em> → needs retrieval <strong>and arithmetic</strong></li>
+    <li class="reveal">❌ <em>"Hi, are you open on Saturday?"</em> → retrieval was <strong>pointless</strong></li>
+    <li class="reveal">🔑 A fixed path can't decide <strong>whether</strong>, <strong>how many times</strong>, or <strong>in what order</strong></li>
+  </ul>
+  <div class="sub reveal">What's missing isn't a better model. It's <strong>runtime decisions</strong>.</div>`},
+
+/* 4 */ {seg:"op", kind:"slide", label:"4", kicker:"By the end of today",
+  title:"What you'll walk out with",
+  html:`<ul class="bullets">
+    <li class="reveal">Wire <strong>tools</strong> to an LLM — and know why tool <em>design</em> beats prompt cleverness</li>
+    <li class="reveal">The <strong>8 workflow patterns</strong> you'll actually reuse in production</li>
+    <li class="reveal"><strong>Agents:</strong> the loop, <strong>ReAct</strong>, and the family beyond it</li>
+    <li class="reveal">The judgement call: <strong>workflow or agent?</strong> — and how to <em>defend</em> it</li>
+    <li class="reveal">Evaluate an agent — <strong>trajectories, state, cost</strong>, not just answers</li>
+    <li class="reveal">✅ Your RAG system, now an agent that <em>decides when to retrieve</em></li>
+  </ul>`},
+
+/* SECTION 1 */ {seg:"s1", kind:"section", label:"§1", num:"1", kicker:"Segment 1 · ~15 min",
+  title:"Why the model alone isn't the product",
+  html:`<div class="sub reveal">The primitive that makes workflows <em>and</em> agents possible</div>`},
+
+/* 5 */ {seg:"s1", kind:"slide", label:"5", kicker:"The reframe",
+  title:"ChatGPT is not an LLM",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>ChatGPT · Claude · Gemini</strong> are <em>products</em>, not models</li>
+    <li class="reveal">The product does the heavy lifting:
+      <strong>memory · tool integration · routing · safety · UI</strong></li>
+    <li class="reveal">"It can browse the web" = someone wrote a <em>search tool</em>, a prompt, a loop and a citation UI</li>
+    <li class="reveal">"It remembers me" = a <strong>retrieval system</strong> — you built one last week</li>
+    <li class="reveal">🔑 You are building the <strong>system</strong>, not the model</li>
+  </ul>`},
+
+/* 6 */ {seg:"s1", kind:"slide", label:"6", kicker:"Know the shape of the tool",
+  title:"What LLMs are good at — and not",
+  html:`<table>
+    <thead><tr><th>✅ Excel at</th><th>❌ Struggle with</th></tr></thead>
+    <tbody>
+      <tr><td>Language fluency</td><td><strong>Multi-step</strong> tasks</td></tr>
+      <tr><td>General knowledge</td><td>External <strong>knowledge / memory</strong></td></tr>
+      <tr><td>Local reasoning</td><td><strong>Precise formats</strong> (JSON, SQL)</td></tr>
+      <tr><td>Quick prototyping</td><td><strong>Verification</strong> &amp; safety</td></tr>
+    </tbody>
+  </table>
+  <div class="sub reveal">Every ❌ is a <strong>systems</strong> problem, not a model problem —
+    which is why three years of scaling hasn't removed the right-hand column</div>`},
+
+/* 7 */ {seg:"s1", kind:"slide", label:"7", kicker:"The fix",
+  title:"Give it tools",
+  html:`<ul class="bullets">
+    <li class="reveal">The model can't <em>do</em> anything — it emits <strong>text</strong></li>
+    <li class="reveal">Give it tools → it can <strong>search, compute, query, write, call</strong></li>
+    <li class="reveal">It never executes. It <strong>asks</strong>: <code>get_weather(city="Tel Aviv")</code></li>
+    <li class="reveal"><strong>Your code</strong> decides whether to honour the request</li>
+    <li class="reveal">🔑 Every tool call is a <strong>permission decision your code owns</strong></li>
+  </ul>
+  <div class="sub reveal">That's exactly what the permission prompt in Claude Code is:
+    the model asked, the harness paused, <em>a human decided</em></div>`},
+
+/* 8 */ {seg:"s1", kind:"slide", label:"8", kicker:"Anatomy",
+  title:"Tool use (function calling)",
+  html: SVG_TOOL + `<div class="sub reveal">There is no separate "agent technology" —
+    an <strong>agent</strong> is step 3 with a <code>while</code> around it and a stopping condition</div>`},
+
+/* 9 */ {seg:"s1", kind:"slide", label:"9", kicker:"Photograph this one",
+  title:"The loop, on the wire",
+  html: code(`messages = [system, user_question]
+
+while steps < 10:                                # ← the safety net
+    resp = llm(messages, tools=[...])
+    if resp.tool_calls:
+        for call in resp.tool_calls:
+            result = TOOLS[call.name](**call.args)    # ← your code
+            messages += [resp, tool_message(result)]
+    else:
+        return resp.text                         # ← the model says it's done`)
+  + `<ul class="bullets">
+    <li class="reveal">Everything else today is a <strong>variation on this</strong></li>
+    <li class="reveal">The message list grows every turn ⇒ <strong>token cost grows fast</strong></li>
+    <li class="reveal">The exit condition is <strong>model-controlled</strong>. Remember that at eval time.</li>
+  </ul>`},
+
+/* 10 */ {seg:"s1", kind:"slide", label:"10", kicker:"Highest leverage in the room",
+  title:"Tool descriptions <em>are</em> prompts",
+  html:`<ul class="bullets">
+    <li class="reveal">The model chooses by reading <strong>your description</strong> — nothing else</li>
+    <li class="reveal">🧪 <strong>The "dumb engineer" test:</strong> could a competent stranger use this
+      with <em>no other context</em>?</li>
+    <li class="reveal">Be explicit: <strong>purpose · each parameter · what it returns · how it fails</strong></li>
+    <li class="reveal">⚠️ <strong>Too many tools</strong> → wrong choices. Past ~10–15, accuracy visibly drops. <em>Consolidate.</em></li>
+    <li class="reveal">🔑 <strong>Tools &gt; prompts.</strong> Tool design beats prompt cleverness, every time.</li>
+  </ul>
+  <div class="sub reveal"><code>search(q)</code> &nbsp;vs.&nbsp;
+    <code>search_product_catalog(query, category) → list[Product]; [] if no match; excludes discontinued items</code></div>`},
+
+/* 11 */ {seg:"s1", kind:"slide", label:"11", kicker:"The standard plug",
+  title:"MCP — Model Context Protocol",
+  html:`<ul class="bullets">
+    <li class="reveal">A <strong>standard way to expose tools</strong> (Anthropic, 2024)</li>
+    <li class="reveal">Before: every integration re-written per app. After: run an <strong>MCP server</strong>, any client connects</li>
+    <li class="reveal">USB-C for tools — <em>write once, plug in anywhere</em>; clients discover tools at runtime</li>
+    <li class="reveal">⚠️ Criticised — verbosity, auth, <strong>context bloat</strong> — and still the de-facto standard</li>
+    <li class="reveal">🔑 Adopt it, but <strong>audit what a server injects</strong> into your context</li>
+  </ul>
+  <div class="sub reveal">A chatty MCP server is slide 10's "too many tools" problem arriving through a different door</div>`},
+
+/* SECTION 2 */ {seg:"s2", kind:"section", label:"§2", num:"2", kicker:"Segment 2 · ~25 min",
+  title:"Workflows — the boring thing that ships",
+  html:`<div class="sub reveal">You can call tools. The question is <em>who decides the order</em>.</div>`},
+
+/* 12 */ {seg:"s2", kind:"slide", label:"12", kicker:"Definition",
+  title:"What a workflow is",
+  html:`<ul class="bullets">
+    <li class="reveal">A <strong>predefined</strong> sequence of LLM calls, tool calls and validations —
+      built for <strong>reliability and reuse</strong></li>
+    <li class="reveal">Keyword: <strong>predefined</strong>. <em>You</em> set the steps; the LLM works <em>inside</em> them</li>
+    <li class="reveal">Control flow lives in <strong>your code</strong> — in a file, in git, reviewable in a PR</li>
+    <li class="reveal">Workflow: developer decides the <strong>path</strong>, model decides the <strong>content</strong></li>
+    <li class="reveal">🔑 The LLM is a <strong>component</strong>, not the conductor</li>
+  </ul>
+  <div class="sub reveal">Most production AI systems that make money are workflows with two or three LLM calls in them</div>`},
+
+/* 13 */ {seg:"s2", kind:"slide", label:"13", kicker:"Checklist · photograph this",
+  title:"When a workflow is the right answer",
+  html:`<ul class="bullets">
+    <li class="reveal">✅ The steps are <strong>known</strong> and decompose the same way every time</li>
+    <li class="reveal">✅ Correctness is <strong>definable</strong> — pass/fail or a measurable target</li>
+    <li class="reveal">✅ <strong>Latency &amp; cost</strong> must be predictable <em>(you can't put an SLA on "four steps or forty")</em></li>
+    <li class="reveal">✅ <strong>Reproducibility</strong> required — audit, compliance, replay a failure</li>
+  </ul>
+  <div class="sub reveal">If three of these are true, <strong>you do not need an agent</strong>.
+    If you can draw the flowchart without arguing — <em>build the flowchart</em>.</div>`},
+
+/* 14 */ {seg:"s2", kind:"slide", label:"14", kicker:"Pattern 1",
+  title:"Augmented LLM",
+  html:`<ul class="bullets">
+    <li class="reveal">One LLM call, made useful: <strong>retrieval + tools + memory</strong></li>
+    <li class="reveal"><code>input → [ LLM ⇄ retrieval / tools / memory ] → output</code></li>
+    <li class="reveal"><em>You already built this in assignment 3</em></li>
+    <li class="reveal">A large fraction of shipped "AI features" are exactly this — <strong>and that's fine</strong></li>
+    <li class="reveal">🔑 This is the <strong>baseline every other pattern must beat</strong></li>
+  </ul>
+  <div class="sub reveal">Note already: if <em>retrieval is a tool</em>, the model is choosing whether to use it —
+    the line to "small agent" is blurrier than the diagrams suggest</div>`},
+
+/* 15 */ {seg:"s2", kind:"slide", label:"15", kicker:"Pattern 2",
+  title:"Prompt chaining",
+  html: SVG_CHAIN + `<ul class="bullets" style="max-width:82ch">
+    <li class="reveal">Each step is <strong>simpler, testable, separately promptable</strong> — EDD applied to control flow</li>
+    <li class="reveal"><strong>Gates</strong> = cheap deterministic checks (schema? language? length?) that retry or fail <em>loudly</em></li>
+  </ul>`},
+
+/* 16 */ {seg:"s2", kind:"slide", label:"16", kicker:"Pattern 3",
+  title:"Routing",
+  html: SVG_ROUTE + `<ul class="bullets" style="max-width:82ch">
+    <li class="reveal">70% trivial traffic → a model costing 1/10th ⇒ <strong>~two-thirds off the bill</strong>, often <em>better</em> quality per branch</li>
+    <li class="reveal">⚠️ A misroute is <strong>unrecoverable</strong> — the router deserves its own golden set and confusion matrix</li>
+  </ul>`},
+
+/* 17 */ {seg:"s2", kind:"slide", label:"17", kicker:"Pattern 4",
+  title:"Parallelization",
+  html: SVG_PARALLEL + `<ul class="bullets" style="max-width:82ch">
+    <li class="reveal"><strong>Sectioning</strong> — different subtasks · <strong>Voting</strong> — same task N times, take the majority</li>
+    <li class="reveal">⚠️ The trap is <strong>fake independence</strong> — if B needs A's output, you get confident nonsense</li>
+  </ul>`},
+
+/* 18 */ {seg:"s2", kind:"slide", label:"18", kicker:"Pattern 5",
+  title:"Orchestrator–Workers",
+  html: SVG_ORCH + `<ul class="bullets" style="max-width:82ch">
+    <li class="reveal">Unlike parallelization, <strong>the subtasks aren't known in advance</strong> — that's a <em>runtime decision</em></li>
+    <li class="reveal">⚠️ This is where a workflow <strong>starts becoming an agent</strong> — and it's next week's lecture in embryo</li>
+  </ul>`},
+
+/* 19 */ {seg:"s2", kind:"slide", label:"19", kicker:"Pattern 6",
+  title:"Evaluator–Optimizer",
+  html: SVG_EVALOPT + `<ul class="bullets" style="max-width:82ch">
+    <li class="reveal">The evaluator is your <strong>lecture-2 judge with a rubric</strong> — now <em>inside</em> the system</li>
+    <li class="reveal">Stronger still: replace the judge with a <strong>verifier</strong> — run the tests, compile it, validate the schema</li>
+  </ul>`},
+
+/* 20 */ {seg:"s2", kind:"slide", label:"20", kicker:"Production pattern",
+  title:"Human-in-the-loop",
+  html:`<ul class="bullets">
+    <li class="reveal">A <strong>human gate</strong> at the point of consequence</li>
+    <li class="reveal"><strong>Pre-action approval</strong> · <strong>post-action review</strong> ·
+      <strong>confidence-based escalation</strong></li>
+    <li class="reveal">Mandatory for the <strong>irreversible · regulated · expensive</strong></li>
+    <li class="reveal">Design question: <em>what does the human actually see?</em></li>
+    <li class="reveal">⚠️ A gate showing <code>Approve? [Y/n]</code> with no context trains humans to <strong>rubber-stamp</strong></li>
+  </ul>
+  <div class="sub reveal">A rubber-stamped gate is <em>worse</em> than no gate — it manufactures accountability.
+    Show the diff, the SQL, the actual email.</div>`},
+
+/* 21 */ {seg:"s2", kind:"slide", label:"21", kicker:"Production pattern",
+  title:"Guardrails &amp; validators",
+  html:`<div class="split">
+    <div><h3 class="reveal">Input — protects you</h3>
+      <ul class="bullets">
+        <li class="reveal">PII</li>
+        <li class="reveal">Prompt injection</li>
+        <li class="reveal">Off-topic / abuse</li>
+      </ul></div>
+    <div><h3 class="reveal">Output — protects the user</h3>
+      <ul class="bullets">
+        <li class="reveal">Schema validity</li>
+        <li class="reveal">Toxicity · brand safety</li>
+        <li class="reveal">Hallucination signals</li>
+      </ul></div>
+  </div>
+  <ul class="bullets">
+    <li class="reveal">Wrap <strong>every</strong> LLM call · run <strong>deterministic checks first</strong> — they're free</li>
+    <li class="reveal">⚠️ <em>Fail closed on safety, fail open on cosmetics</em> — a schema miss retries, an injection <strong>hard-stops</strong></li>
+  </ul>`},
+
+/* 22 */ {seg:"s2", kind:"slide", label:"22", kicker:"Production pattern",
+  title:"Reflection / self-critique",
+  html:`<ul class="bullets">
+    <li class="reveal">Same model plays <strong>generator</strong> <em>and</em> <strong>judge</strong> — critique, revise, repeat</li>
+    <li class="reveal">✅ Cheaper &amp; simpler than evaluator–optimizer: one model, one prompt set</li>
+    <li class="reveal">⚠️ <strong>Its own blind spots</strong> — it can't catch what it can't see</li>
+    <li class="reveal">🔑 Catches <strong>sloppiness</strong>. Misses <strong>conviction</strong>.</li>
+    <li class="reveal">Diminishing returns fast — <strong>1–2 rounds</strong>, then stop</li>
+  </ul>
+  <div class="sub reveal">Who has asked Claude <em>"are you sure?"</em> and got a better answer —
+    and who has watched it apologise and repeat itself?</div>`},
+
+/* BREAK */ {seg:"brk", kind:"section", label:"23", num:"☕",
+  title:"Break",
+  html:`<div class="sub reveal">~5 min · Next: <strong>agents</strong> — when you hand the model the steering wheel</div>
+        <div class="sub reveal" style="margin-top:.3em">Check now: is your <em>assignment-3 retriever</em> importable?</div>`},
+
+/* SECTION 3 */ {seg:"s3", kind:"section", label:"§3", num:"3", kicker:"Segment 3 · ~28 min",
+  title:"Agents — autonomy, and what it costs",
+  html:`<div class="sub reveal">Same tools, same LLM calls. One difference: <em>nobody wrote the order.</em></div>`},
+
+/* 24 */ {seg:"s3", kind:"slide", label:"24", kicker:"Definition",
+  title:"What an agent is",
+  html:`<ul class="bullets">
+    <li class="reveal">A <strong>loop</strong> that lets the model <strong>plan, act, observe</strong> and decide what to do next —
+      <em>without a human in every loop</em></li>
+    <li class="reveal"><strong>Autonomy</strong> + <strong>memory</strong> + <strong>tools</strong> — all three required</li>
+    <li class="reveal">Not a chatbot. Not a prompt. <em>Not your Claude Desktop.</em></li>
+    <li class="reveal">🔑 The model chooses the <strong>path</strong>, not just the words —
+      and it decides <strong>when it's done</strong></li>
+  </ul>
+  <div class="sub reveal">You've all been supervising one for weeks. Every instinct you've built about
+    when to let it run and when to watch — <em>that's the judgement we're formalising</em>.</div>`},
+
+/* 25 */ {seg:"s3", kind:"slide", label:"25", kicker:"The mechanism",
+  title:"The agent loop",
+  html: SVG_AGENTLOOP + `<div class="sub reveal">⚠️ Three safety nets, <strong>always</strong>:
+    <strong>max iterations · token budget · wall-clock timeout</strong>.
+    An unbounded agent is a program whose halting condition is <em>a vibe</em>.</div>`},
+
+/* 26 */ {seg:"s3", kind:"slide", label:"26", kicker:"The keeper slide",
+  title:"Workflow vs. Agent",
+  html:`<table>
+    <thead><tr><th></th><th>Workflow</th><th>Agent</th></tr></thead>
+    <tbody>
+      <tr><td>Path</td><td>Predefined</td><td><strong>Decided at runtime</strong></td></tr>
+      <tr><td>Flexibility</td><td>Low</td><td><strong>High, open-ended</strong></td></tr>
+      <tr><td>Cost / latency</td><td><strong>Predictable</strong></td><td>Variable — can spiral</td></tr>
+      <tr><td>Reliability</td><td><strong>High</strong></td><td>Lower, harder to test</td></tr>
+      <tr><td>Best for</td><td>Known tasks, SLAs</td><td>Open-ended research, coding</td></tr>
+    </tbody>
+  </table>
+  <div class="sub reveal">Not a hierarchy — a <strong>trade-off</strong>. Agents aren't the "advanced" choice,
+    they're the <em>less constrained</em> one. Hybrids are normal: a workflow with <strong>one agentic node</strong>.</div>`},
+
+/* 27 */ {seg:"s3", kind:"slide", label:"27", kicker:"The default skeleton",
+  title:"ReAct — reasoning + acting",
+  html:`<ul class="bullets">
+    <li class="reveal">Interleave <strong>Thought → Action → Observation</strong>, and repeat</li>
+    <li class="reveal"><strong>Thought</strong> — the model writes <em>why</em> before it acts</li>
+    <li class="reveal"><strong>Action</strong> — a real tool call · <strong>Observation</strong> — the real result, back into context</li>
+    <li class="reveal">The trace becomes the model's <strong>scratchpad</strong>; replanning is <em>implicit</em>, every step</li>
+    <li class="reveal">🔑 If you build one agent, build this one</li>
+  </ul>
+  <div class="sub reveal">Chain-of-thought from lecture 1, aimed at a <em>decision</em> instead of an answer ·
+    2022 paper, four model generations, unchanged</div>`},
+
+/* 28 */ {seg:"s3", kind:"slide", label:"28", kicker:"Read it out loud",
+  title:"A ReAct trace",
+  html: code(`Q: Is our 2026 refund window longer than the 2024 contract's?
+
+Thought: I need both documents. Start with the current policy.
+Action:  search_docs("refund window policy 2026")
+Obs:     "Customers may return items within 30 days..."
+
+Thought: Now the 2024 contract.
+Action:  search_docs("refund clause 2024 contract")
+Obs:     "...returns accepted up to 14 days from delivery."
+
+Thought: 30 > 14. I have both. I can answer.
+Answer:  Yes - 30 days vs. 14.  [policy_2026 p.3]  [contract_2024 s.7.2]`)
+  + `<div class="sub reveal">This is the <strong>multi-hop question your RAG pipeline couldn't answer</strong>.
+    Nothing here needed a smarter model — it needed <em>a loop</em>.</div>`},
+
+/* 29 */ {seg:"s3", kind:"slide", label:"29", kicker:"Strengths",
+  title:"Why ReAct won",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Debuggable</strong> — every step logged; you can point at where it went wrong</li>
+    <li class="reveal"><strong>Grounded</strong> — each action is a real tool call, not a guess</li>
+    <li class="reveal"><strong>Incremental</strong> — can stop early when confident</li>
+    <li class="reveal"><strong>Universal</strong> — works with almost any tool set</li>
+    <li class="reveal"><strong>Easy</strong> — out of the box in every framework</li>
+  </ul>
+  <div class="sub reveal">The failure mode shifts from <em>"the model made it up"</em> to
+    <em>"the tool returned something bad"</em> — a far more tractable class of bug</div>`},
+
+/* 30 */ {seg:"s3", kind:"slide", label:"30", kicker:"Weaknesses",
+  title:"Where ReAct hurts",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Token-expensive</strong> — the full history rides along every step
+      <ul><li>a 10-step trajectory can cost more than 50 single calls</li></ul></li>
+    <li class="reveal"><strong>Can loop forever</strong> — search, get nothing, rephrase, repeat… <em>needs a cap</em></li>
+    <li class="reveal"><strong>Fragile</strong> — one garbage tool result derails the whole trajectory</li>
+    <li class="reveal"><strong>Sequential by design</strong> — slow wall-clock, no parallelism</li>
+    <li class="reveal">Only as good as your <strong>tool descriptions</strong> <em>(slide 10)</em></li>
+  </ul>
+  <div class="sub reveal">Fix: <code>max_iterations</code> + <em>"if a tool fails twice, say you can't do it"</em> +
+    tools that return <strong>explanatory errors</strong></div>`},
+
+/* 31 */ {seg:"s3", kind:"slide", label:"31", kicker:"Checklist · photograph this",
+  title:"When to use an agent — and when not to",
+  html:`<div class="split">
+    <div><h3 class="reveal">✅ Good for agents</h3>
+      <ul class="bullets">
+        <li class="reveal">Open-ended queries</li>
+        <li class="reveal">Unpredictable steps</li>
+        <li class="reveal">Exploration — browsing, coding</li>
+        <li class="reveal">Research · multi-source analysis</li>
+        <li class="reveal"><em>Tasks you cannot pre-decompose</em></li>
+      </ul></div>
+    <div><h3 class="reveal">❌ Don't over-agent</h3>
+      <ul class="bullets">
+        <li class="reveal">Simple tasks, known answers</li>
+        <li class="reveal">Speed / cost guarantees</li>
+        <li class="reveal">A single function call would do</li>
+        <li class="reveal">A workflow handles it reliably</li>
+        <li class="reveal"><em>"An agent could do this" is not a reason</em></li>
+      </ul></div>
+  </div>
+  <div class="sub reveal">🔑 <strong>If you don't need an agent, don't use an agent.</strong></div>`},
+
+/* 32 */ {seg:"s3", kind:"slide", label:"32", kicker:"Beyond ReAct",
+  title:"Plan-and-Execute",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Plan once</strong> with a strong model → <strong>execute</strong> with a cheap one →
+      <strong>replan</strong> on failure</li>
+    <li class="reveal">✅ Far fewer expensive LLM calls — pay for reasoning <em>once</em>, where it matters</li>
+    <li class="reveal">✅ The plan is a <strong>human-readable artefact</strong> — show it for approval before anything runs</li>
+    <li class="reveal">⚠️ <strong>Rigid</strong> — commitment happens <em>before</em> any evidence arrives</li>
+  </ul>
+  <div class="sub reveal">You've used this: the <strong>goal / plan lifecycle</strong> in a headless run —
+    including the part where a wrong step 1 confidently executes to the end</div>`},
+
+/* 33 */ {seg:"s3", kind:"slide", label:"33", kicker:"Beyond ReAct",
+  title:"ReWOO — Reasoning WithOut Observation",
+  html: code(`Plan:  E1 = search("2026 refund policy")
+       E2 = search("2024 contract refund clause")
+       E3 = compare(#E1, #E2)          # placeholders, not results
+
+# E1 and E2 fire in parallel · the trace never re-reads observations`)
+  + `<ul class="bullets">
+    <li class="reveal">✅ Highest <strong>token efficiency</strong>, lowest <strong>latency</strong></li>
+    <li class="reveal">⚠️ Blind mid-flight — <strong>cannot react</strong> to an unexpected tool result</li>
+    <li class="reveal">🔑 <strong>ReWOO for fan-out gathering · ReAct for exploration</strong></li>
+  </ul>`},
+
+/* 34 */ {seg:"s3", kind:"slide", label:"34", kicker:"Beyond ReAct",
+  title:"Reflexion",
+  html:`<ul class="bullets">
+    <li class="reveal">ReAct <strong>+ self-critique + episodic memory across attempts</strong></li>
+    <li class="reveal">Fail → write down <em>why</em> → retry with the lesson in context</li>
+    <li class="reveal">✅ Genuinely improves on <strong>retryable, verifiable</strong> tasks (code that must pass tests)</li>
+    <li class="reveal">⚠️ <strong>Highest latency</strong> of the family — you're running it more than once</li>
+    <li class="reveal">Without a hard failure signal, you're just accumulating the model's opinions about itself</li>
+  </ul>
+  <div class="sub reveal">Those "lessons learned" are, in miniature, what <code>CLAUDE.md</code> is —
+    a memory re-injected on the next run</div>`},
+
+/* 35 */ {seg:"s3", kind:"slide", label:"35", kicker:"Beyond ReAct",
+  title:"CodeAct",
+  html:`<ul class="bullets">
+    <li class="reveal">The action <strong>is executable code</strong> — usually Python — not a fixed tool call</li>
+    <li class="reveal">One action can <strong>loop, branch, transform, chain</strong> — expressiveness a schema can't reach</li>
+    <li class="reveal">✅ Fewer steps: <em>"fetch 40 records, filter by date, sum totals"</em> = 40 tool calls, or <strong>one script</strong></li>
+    <li class="reveal">⚠️ <strong>Sandbox required.</strong> Hallucinated code runs as eagerly as correct code</li>
+    <li class="reveal">Container · no credentials · no network unless needed · resource limits</li>
+  </ul>
+  <div class="sub reveal">This is Claude Code's default move — and it's <em>why</em> it asks permission before it runs things</div>`},
+
+/* 36 */ {seg:"s3", kind:"slide", label:"36", kicker:"The decision",
+  title:"Choosing a skeleton",
+  html:`<table>
+    <thead><tr><th>Skeleton</th><th>Buys you</th><th>Costs you</th><th>Use when</th></tr></thead>
+    <tbody>
+      <tr><td>ReAct</td><td>Adaptivity, debuggability</td><td>Tokens, latency</td><td><strong>Default.</strong> Exploration</td></tr>
+      <tr><td>Plan-and-Execute</td><td>Cost</td><td>Rigidity</td><td>Steps knowable up front</td></tr>
+      <tr><td>ReWOO</td><td>Speed, tokens</td><td>No mid-flight recovery</td><td>Independent lookups</td></tr>
+      <tr><td>Reflexion</td><td>Learning from failure</td><td>Latency</td><td>Retryable, verifiable</td></tr>
+      <tr><td>CodeAct</td><td>Expressiveness</td><td>Sandbox, blast radius</td><td>Data wrangling, coding</td></tr>
+    </tbody>
+  </table>
+  <div class="sub reveal">Start with <strong>ReAct</strong>. Move only when <em>a measurement</em> tells you to —
+    switching because a blog post said so is the anti-pattern this course exists to prevent.</div>`},
+
+/* 37 */ {seg:"s3", kind:"slide", label:"37", kicker:"From people who shipped",
+  title:"Tips for agents that actually work",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Simplify the workflow first</strong> — group tools, replace agentic decisions with
+      <em>deterministic logic</em>. Every decision you remove can't go wrong.</li>
+    <li class="reveal"><strong>Improve information flow</strong> — crystal-clear instructions, and
+      <strong>log everything</strong>, especially errors</li>
+    <li class="reveal"><strong>Tools &gt; prompts</strong> — and apply the <strong>dumb engineer test</strong> <em>(slide 10)</em></li>
+    <li class="reveal"><strong>Fewer tools than you think</strong> — every extra tool is a chance to choose wrong</li>
+  </ul>
+  <div class="sub reveal">🔑 If your agent chooses wrong, <strong>fix the tool descriptions before you touch the system prompt</strong>.
+    Swallowed errors are the #1 cause of baffling agent behaviour.</div>`},
+
+/* SECTION 4 */ {seg:"s4", kind:"section", label:"§4", num:"4", kicker:"Segment 4 · ~20 min",
+  title:"Evaluating agents",
+  html:`<div class="sub reveal">You can build one. The question that decides whether it ships is
+    <em>whether it works</em>.</div>`},
+
+/* 38 */ {seg:"s4", kind:"slide", label:"38", kicker:"Three new problems",
+  title:"Why agent eval is harder",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Trajectories</strong> — multi-step paths. It can be <em>right for the wrong reasons</em>.</li>
+    <li class="reveal"><strong>State</strong> — it <em>changes the world</em>. Grade the world, not the summary it wrote.</li>
+    <li class="reveal"><strong>Tool budget</strong> — tokens, calls and wall-clock are <strong>first-class metrics</strong>, not footnotes</li>
+    <li class="reveal">🔑 <strong>Never grade the agent's claim. Grade the world.</strong></li>
+  </ul>
+  <div class="sub reveal">"I've updated the ticket" is generated text like any other. <em>Go look at the ticket.</em>
+    Everything from lecture 2 still applies — this is <strong>on top</strong>.</div>`},
+
+/* 39 */ {seg:"s4", kind:"slide", label:"39", kicker:"Reference slide",
+  title:"The vocabulary",
+  html:`<div class="split">
+    <div><ul class="bullets">
+      <li class="reveal"><strong>Task</strong> — one test: input + success criteria</li>
+      <li class="reveal"><strong>Trial</strong> — one attempt <em>(outputs vary)</em></li>
+      <li class="reveal"><strong>Transcript</strong> — every thought, call, result</li>
+      <li class="reveal"><strong>Outcome</strong> — the actual final state of the world</li>
+    </ul></div>
+    <div><ul class="bullets">
+      <li class="reveal"><strong>Grader</strong> — logic that scores one aspect</li>
+      <li class="reveal"><strong>Harness</strong> — runs the evals end to end</li>
+      <li class="reveal"><strong>Eval suite</strong> — tasks for one capability area</li>
+      <li class="reveal"><strong>Scaffold</strong> — the agent harness: orchestration, tools, prompts</li>
+    </ul></div>
+  </div>
+  <div class="sub reveal">Two teams evaluating "the same model" with different <strong>scaffolds</strong>
+    get wildly different scores — remember that at slide 44</div>`},
+
+/* 40 */ {seg:"s4", kind:"slide", label:"40", kicker:"Lecture 2, one rung up",
+  title:"Three kinds of grader",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Code-based</strong> — fast · cheap · reproducible · objective · ⚠️ brittle to variation</li>
+    <li class="reveal"><strong>Model-based (LLM-as-a-judge)</strong> — flexible · open-ended · scales ·
+      ⚠️ non-deterministic, needs calibration</li>
+    <li class="reveal"><strong>Human</strong> — the gold standard · ⚠️ expensive and slow</li>
+    <li class="reveal">🔑 Use <strong>code</strong> wherever the outcome is checkable. Judge only what code can't reach.</li>
+  </ul>
+  <div class="sub reveal">Agents shift the balance <em>toward code</em>: did the row land in the DB?
+    does the file exist? do the tests pass? — <strong>booleans, free, unarguable</strong></div>`},
+
+/* 41 */ {seg:"s4", kind:"slide", label:"41", kicker:"The mistake everyone makes",
+  title:"Don't grade the path. Grade the outcome.",
+  html:`<ul class="bullets">
+    <li class="reveal">Tempting: <em>"it should call <code>search</code> then <code>summarise</code>"</em> — ❌ <strong>don't</strong></li>
+    <li class="reveal">Punishing a tool sequence <strong>kills valid approaches</strong> and stifles creativity</li>
+    <li class="reveal">The agent that solved it in <strong>2 steps instead of 5</strong> should <em>win</em>, not fail</li>
+    <li class="reveal">✅ Grade: <strong>final state · cost · latency · reliability</strong></li>
+    <li class="reveal">🔍 Trajectories are for <strong>debugging</strong>, not for <strong>scoring</strong></li>
+  </ul>
+  <div class="sub reveal">The exception: <strong>safety and compliance</strong> are legitimately path-level —
+    <em>"must never call <code>delete_user</code>"</em>. Hard constraints, not prescribed sequences.</div>`},
+
+/* 42 */ {seg:"s4", kind:"slide", label:"42", kicker:"Your results table",
+  title:"What to measure",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Task success</strong> — is the final state correct? <em>(the headline)</em></li>
+    <li class="reveal"><strong>Cost</strong> — tokens, $, number of tool calls</li>
+    <li class="reveal"><strong>Latency</strong> — wall-clock, and <strong>p95</strong>, not the mean</li>
+    <li class="reveal"><strong>Reliability</strong> — same task, N runs: how often does it succeed?</li>
+    <li class="reveal"><strong>Trajectory quality</strong> — sane steps, no thrash <em>(debugging only)</em></li>
+  </ul>
+  <div class="sub reveal">95% at $4 and 90s can be <strong>strictly worse</strong> than 88% at $0.20 and 8s —
+    a single accuracy number cannot make that decision. ⚠️ <strong>Run it N times.</strong></div>`},
+
+/* 43 */ {seg:"s4", kind:"slide", label:"43", kicker:"The landscape",
+  title:"Benchmark families",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Coding</strong> — SWE-bench <em>(real GitHub issues, graded by the repo's own tests)</em></li>
+    <li class="reveal"><strong>Tool use</strong> — BFCL · τ-bench <em>(multi-turn, and must obey policy)</em></li>
+    <li class="reveal"><strong>Assistance / web</strong> — GAIA · WebArena</li>
+    <li class="reveal"><strong>Computer use</strong> — OSWorld <em>(drive a desktop)</em></li>
+    <li class="reveal"><strong>Deep research</strong> — DeepResearch Bench <em>(long-horizon, multi-source)</em></li>
+  </ul>
+  <div class="sub reveal">⚠️ These measure <strong>different things</strong> — don't collapse them into one ranking.
+    "Best agent model" is a <em>category error</em>.</div>`},
+
+/* 44 */ {seg:"s4", kind:"slide", label:"44", kicker:"Stay suspicious",
+  title:"Why the leaderboard isn't your answer",
+  html:`<ul class="bullets">
+    <li class="reveal">A score measures <strong>model + scaffold + tools + prompt</strong> — never the model alone</li>
+    <li class="reveal">Same model, different harness → <strong>very different numbers</strong></li>
+    <li class="reveal"><strong>Contamination is worse here</strong> — public repos, public tasks, fixes in the training data</li>
+    <li class="reveal">Your traffic doesn't look like the benchmark</li>
+    <li class="reveal">🔑 Benchmarks narrow the <strong>shortlist</strong>. <em>Your</em> eval set makes the <strong>decision</strong>.</li>
+  </ul>
+  <div class="sub reveal">Lecture 2's contamination, lecture 3's "benchmarks lie" — <strong>same lesson, third time</strong>.
+    In assignment 4 the only leaderboard is <em>agent vs. your own baseline</em>.</div>`},
+
+/* 45 */ {seg:"s4", kind:"slide", label:"45", kicker:"The recipe",
+  title:"Building your own agent eval",
+  html:`<div class="steps" style="grid-template-columns:repeat(5,1fr);max-width:1240px">
+    <div class="step reveal"><div class="n">1</div><div class="t">Define success</div>
+      <div class="d">Final state, cost ceiling, latency budget, safety constraints</div></div>
+    <div class="step reveal"><div class="n">2</div><div class="t">Golden set</div>
+      <div class="d">Real + synthetic tasks, including the edge cases</div></div>
+    <div class="step reveal"><div class="n">3</div><div class="t">Trace all</div>
+      <div class="d">Every call, every observation, stored</div></div>
+    <div class="step reveal"><div class="n">4</div><div class="t">Score outcomes</div>
+      <div class="d">State checks where possible, judge where not</div></div>
+    <div class="step reveal"><div class="n">5</div><div class="t">Run N times</div>
+      <div class="d">Report p50, p95 and consistency</div></div>
+  </div>
+  <div class="sub reveal">Include the three agent-specific task types: <strong>multi-hop</strong> ·
+    <strong>needs no tool at all</strong> · <strong>a tool that fails</strong>.
+    Instrument <em>before</em> you tune — retrofitting step 3 is misery.</div>`},
+
+/* 46 */ {seg:"s4", kind:"slide", label:"46", kicker:"The maxim that saves days",
+  title:"0% pass@100 = broken task, not broken agent",
+  html:`<ul class="bullets">
+    <li class="reveal">Agent fails a task <strong>100 times out of 100</strong>?</li>
+    <li class="reveal">First suspect: your <strong>task spec</strong> · your <strong>grader</strong> · your <strong>environment</strong></li>
+    <li class="reveal">Second suspect: the agent</li>
+    <li class="reveal">🔑 A task nothing can pass <strong>measures nothing</strong></li>
+    <li class="reveal"><em>Read the transcript before you blame the model.</em></li>
+  </ul>
+  <div class="sub reveal">Nine times in ten the agent did something reasonable and the harness said no.
+    <strong>Your measurement apparatus is part of the system — and it fails too.</strong></div>`},
+
+/* SECTION 5 */ {seg:"s5", kind:"section", label:"§5", num:"5", kicker:"Segment 5 · ~22 min",
+  title:"Frameworks &amp; build it yourself",
+  html:`<div class="sub reveal">The library that stops you rewriting the plumbing — <em>then you build one</em></div>`},
+
+/* 47 */ {seg:"s5", kind:"slide", label:"47", kicker:"The framework",
+  title:"LangGraph",
+  html: SVG_GRAPH + `<ul class="bullets" style="max-width:92ch">
+    <li class="reveal">Chains are <strong>DAGs</strong>; agents have <strong>cycles</strong> — hence a graph,
+      with <strong>shared typed state</strong> flowing through every node</li>
+    <li class="reveal">Routing = <em>conditional edge</em> · evaluator–optimizer = <em>cycle with an exit</em> ·
+      HITL = <em>built-in interrupt</em> that pauses and resumes</li>
+  </ul>
+  <div class="sub reveal"><code>create_react_agent(model, tools)</code> is one line —
+    ⚠️ but you should be able to write <strong>slide 9</strong> by hand</div>`},
+
+/* 48 */ {seg:"s5", kind:"slide", label:"48", kicker:"Non-negotiable",
+  title:"You cannot debug what you cannot see",
+  html:`<ul class="bullets">
+    <li class="reveal">Trace every run: <strong>which tool · what input · what output · how long · how many tokens</strong></li>
+    <li class="reveal"><strong>LangSmith</strong> · <strong>Langfuse</strong> · OpenTelemetry — or a <code>JSONL</code> file, one line per step</li>
+    <li class="reveal">A stored trace is your <strong>eval transcript</strong> <em>and</em> your <strong>bug report</strong></li>
+    <li class="reveal">⚠️ Add tracing on <strong>day one</strong>. Retrofitting it is misery.</li>
+  </ul>
+  <div class="sub reveal">Agent bugs are <em>emergent</em> — nothing throws, the answer is just wrong.
+    The teams that ship agents are the ones who can answer <strong>"why did it do that?"</strong> in under a minute.</div>`},
+
+/* 49 */ {seg:"s5", kind:"slide", label:"49", kicker:"Hands-on",
+  title:"🛠️ What we're building",
+  html:`<ul class="bullets">
+    <li class="reveal">Your <strong>assignment-3 RAG system</strong>, now an agent that <em>decides</em></li>
+    <li class="reveal"><strong>A.</strong> Retriever becomes a tool + <strong>2 more tools</strong></li>
+    <li class="reveal"><strong>B.</strong> ReAct loop in <strong>LangGraph</strong></li>
+    <li class="reveal"><strong>C.</strong> Add <strong>one pattern</strong>: reflection · evaluator–optimizer · guardrails</li>
+    <li class="reveal"><strong>D.</strong> Evaluate: <strong>agent vs. static RAG</strong> on multi-step tasks</li>
+    <li class="reveal"><em>This is assignment 4. We start it together.</em></li>
+  </ul>
+  <div class="sub reveal">The agent <strong>will lose</strong> to static RAG on some tasks.
+    That's the <em>finding</em>, not a failed homework.</div>`},
+
+/* 50 */ {seg:"s5", kind:"slide", label:"50", kicker:"Exercise A",
+  title:"Tools",
+  html:`<ul class="bullets">
+    <li class="reveal">Wrap your <strong>retriever</strong> as a tool — good name, precise description, typed args</li>
+    <li class="reveal">Say what corpus it covers, what it returns, and <strong>what it does <em>not</em> cover</strong></li>
+    <li class="reveal">Add <strong>2 more</strong>: web search · calculator · external API · code execution</li>
+    <li class="reveal">Apply the <strong>dumb engineer test</strong> to all three</li>
+    <li class="reveal">✅ Ask a question needing <strong>each</strong> tool. Did it pick the right one?</li>
+  </ul>
+  <div class="sub reveal">When it picks wrong — and it will, once — the fix is <strong>the description</strong>,
+    not the prompt</div>`},
+
+/* 51 */ {seg:"s5", kind:"slide", label:"51", kicker:"Exercise B",
+  title:"The loop",
+  html: code(`agent = create_react_agent(model, tools=[retriever, calc, web])
+
+# set the nets BEFORE the first run, not after the first surprise
+config = {"recursion_limit": 12, "max_tokens": 60_000, "timeout_s": 90}
+
+for step in agent.stream(question, config):
+    log(step.tool, step.input, step.output, step.duration_ms)   # exercise D needs this`)
+  + `<ul class="bullets">
+    <li class="reveal">✅ Run the <strong>multi-hop question</strong> your assignment-3 pipeline couldn't answer</li>
+    <li class="reveal">Read your trace out loud — that's slide 28, with <em>your</em> data</li>
+  </ul>`},
+
+/* 52 */ {seg:"s5", kind:"slide", label:"52", kicker:"Exercise C",
+  title:"Add one pattern",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Reflection</strong> — critique + revise before answering <em>(cheapest, small effect)</em></li>
+    <li class="reveal"><strong>Evaluator–Optimizer</strong> — a separate judge using your
+      <strong>assignment-2 rubric</strong> <em>(most satisfying)</em></li>
+    <li class="reveal"><strong>Guardrails</strong> — validate in and out, schema + refusal on out-of-scope
+      <em>(fastest, most production-relevant)</em></li>
+    <li class="reveal">Measure <strong>before vs. after</strong>: quality, cost, latency</li>
+    <li class="reveal">⚠️ It has to <strong>earn</strong> its cost. Show the numbers.</li>
+  </ul>
+  <div class="sub reveal">One pattern done well beats three bolted on.
+    <em>"+40% latency for +2 points"</em> is a <strong>good answer</strong>, honestly reported.</div>`},
+
+/* 53 */ {seg:"s5", kind:"slide", label:"53", kicker:"Exercise D",
+  title:"Agent vs. static RAG",
+  html:`<ul class="bullets">
+    <li class="reveal">Re-run your <strong>assignment-2 + assignment-3 eval suite</strong> on the agent —
+      it still applies, unchanged</li>
+    <li class="reveal">Add columns: <strong>task success (final state)</strong> · <strong>cost</strong> ·
+      <strong>latency p95</strong> · <strong>tool-call count</strong> · <strong>reliability over N runs</strong></li>
+    <li class="reveal">Hand-write <strong>5–10 multi-step tasks</strong> the static pipeline <em>cannot</em> do</li>
+    <li class="reveal">✅ One table: <strong>RAG vs. Agent</strong>, per metric — <em>plus the cases where the agent lost</em></li>
+  </ul>
+  <div class="sub reveal">Run each task <strong>5 times</strong>. When someone reports "3 out of 5" for a task
+    their demo passed — <em>that's slide 42 landing permanently</em>.</div>`},
+
+/* 54 */ {seg:"s5", kind:"slide", label:"54", kicker:"Remember these",
+  title:"Key takeaways",
+  html:`<ul class="bullets">
+    <li class="reveal">Most <strong>"agent" problems are workflow problems</strong> — add autonomy only when demanded</li>
+    <li class="reveal"><strong>ReAct is the universal skeleton</strong> — build it first, switch on a <em>measurement</em></li>
+    <li class="reveal"><strong>Tools &gt; prompts</strong> — tool design is the highest-leverage work you'll do</li>
+    <li class="reveal"><strong>Grade the outcome, not the path</strong> — and grade the <em>world</em>, not the model's summary</li>
+    <li class="reveal"><strong>Eval is harder than it looks</strong> — trace everything, run N times, build golden sets from real failures</li>
+    <li class="reveal">🔑 <strong>If you don't need an agent, don't use an agent.</strong></li>
+  </ul>
+  <div class="sub reveal">Order of suspicion when it misbehaves: <strong>tool descriptions → missing deterministic logic →
+    the safety nets →</strong> <em>and only then the model</em></div>`},
+
+/* 55 */ {seg:"s5", kind:"slide", label:"55", kicker:"Next lecture",
+  title:"One agent, or a team?",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Lecture 5 — Multi-Agent Architecture</strong></li>
+    <li class="reveal">One agent with 15 tools → <strong>several specialists</strong> with 4 each</li>
+    <li class="reveal"><strong>Supervisor · handoffs · shared state</strong> — <em>who owns the context?</em></li>
+    <li class="reveal">New failure modes: coordination, duplicated work, agents talking past each other</li>
+    <li class="reveal">Same corpus, same evals — and one hard new question: <em>which agent was wrong?</em></li>
+  </ul>
+  <div class="sub reveal">It's <strong>orchestrator–workers</strong> <em>(slide 18)</em> grown into an architecture</div>`},
+
+/* 56 */ {seg:"s5", kind:"lead", label:"56",
+  title:"Step 4 done. ✅",
+  html:`<div class="sub reveal">Your system doesn't just answer. It <em>decides</em>, <em>acts</em>, and <em>checks itself</em>.</div>
+    <div class="chips">
+      <span class="chip">Prompting</span>
+      <span class="chip">Evals</span>
+      <span class="chip">RAG</span>
+      <span class="chip"><b>Agents</b></span>
+      <span class="chip">Multi-agent</span>
+    </div>
+    <div class="sub reveal" style="margin-top:1.4em"><em>Questions?</em></div>`},
+];
+
+/* ---------- render ---------- */
+const deck = document.getElementById('deck');
+slides.forEach((s,i)=>{
+  const seg = SEG[s.seg];
+  const el = document.createElement('section');
+  el.className = 'slide ' + (s.kind||'slide');
+  el.dataset.i = i;
+  el.style.setProperty('--accent', seg.a);
+  el.style.setProperty('--accent2', seg.b);
+
+  let inner = '';
+  if(s.kind==='section'){
+    inner += `<div class="big-num reveal">${s.num||''}</div>`;
+    if(s.kicker) inner += `<div class="kicker reveal">${s.kicker}</div>`;
+    inner += `<h1 class="title reveal">${s.title}</h1>`;
+    if(s.html) inner += s.html;
+  } else if(s.kind==='lead'){
+    inner += `<h1 class="title reveal">${s.title}</h1>`;
+    if(s.html) inner += s.html;
+  } else {
+    if(s.kicker) inner += `<div class="kicker reveal">${s.kicker}</div>`;
+    inner += `<h1 class="title reveal">${s.title}</h1>`;
+    if(s.html) inner += s.html;
+  }
+  el.innerHTML = inner;
+
+  // stagger reveal children
+  const revs = el.querySelectorAll('.reveal, ul.bullets li, pre, table');
+  revs.forEach((r,idx)=>{ if(!r.classList.contains('reveal')) r.classList.add('reveal');
+    r.style.animationDelay = (0.12 + idx*0.08)+'s'; });
+
+  deck.appendChild(el);
+});
+
+/* ---------- navigation ---------- */
+const slidesEls = [...document.querySelectorAll('.slide')];
+const total = slidesEls.length;
+// highest numbered slide label, for the "n / N" counter (section dividers don't count)
+const lastLabel = Math.max(...slides.map(s=>parseInt(s.label)).filter(Number.isInteger));
+const progress = document.getElementById('progress');
+const counter = document.getElementById('counter');
+const segLabel = document.getElementById('segLabel');
+const glow = document.querySelector('.accent-glow');
+let cur = 0;
+
+function show(n){
+  n = Math.max(0, Math.min(total-1, n));
+  slidesEls.forEach(el=>el.classList.remove('active'));
+  const el = slidesEls[cur=n];
+  // reflow to restart animations
+  void el.offsetWidth;
+  el.classList.add('active');
+  const s = slides[n], seg = SEG[s.seg];
+  progress.style.width = ((n+1)/total*100)+'%';
+  counter.textContent = s.label + ' / ' + lastLabel;
+  segLabel.textContent = seg.name;
+  glow.style.background = `radial-gradient(circle, ${seg.a}, transparent 60%)`;
+  document.documentElement.style.setProperty('--accent', seg.a);
+  document.documentElement.style.setProperty('--accent2', seg.b);
+  location.hash = n;
+}
+function next(){ show(cur+1); }
+function prev(){ show(cur-1); }
+
+document.getElementById('next').onclick = next;
+document.getElementById('prev').onclick = prev;
+
+document.addEventListener('keydown', e=>{
+  if(['ArrowRight','PageDown',' '].includes(e.key)){ e.preventDefault(); next(); }
+  else if(['ArrowLeft','PageUp'].includes(e.key)){ e.preventDefault(); prev(); }
+  else if(e.key==='Home'){ show(0); }
+  else if(e.key==='End'){ show(total-1); }
+  else if(e.key==='f'||e.key==='F'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+});
+
+/* touch swipe */
+let tx=0;
+addEventListener('touchstart',e=>tx=e.changedTouches[0].clientX,{passive:true});
+addEventListener('touchend',e=>{ const dx=e.changedTouches[0].clientX-tx; if(Math.abs(dx)>50){ dx<0?next():prev(); } },{passive:true});
+
+/* start (support deep-link via hash) */
+const start = parseInt(location.hash.slice(1));
+show(Number.isInteger(start)?start:0);
+</script>
+</body>
+</html>
