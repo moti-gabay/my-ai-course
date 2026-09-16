@@ -30,3 +30,6 @@ desktop.ini
 
 # Office temp lock files
 ~$*
+
+# Dashboard benchmark runs
+lesson4/benchmark_results/

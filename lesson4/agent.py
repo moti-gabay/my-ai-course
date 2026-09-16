@@ -2,7 +2,7 @@ import time
 import json
 import uuid
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Callable
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
 from dotenv import load_dotenv
@@ -33,24 +33,33 @@ class LangGraphAgentRunner:
         model_name: str = "gpt-4o-mini",
         max_iterations: int = 10,
         timeout_seconds: float = 30.0,
-        log_file: str = "agent_execution_logs.jsonl"
+        log_file: str = "agent_execution_logs.jsonl",
+        temperature: float = 0.0,
+        system_prompt: Optional[str] = None
     ):
         self.model_name = model_name
         self.max_iterations = max_iterations
         self.timeout_seconds = timeout_seconds
         self.log_file = log_file
+        self.temperature = temperature
+        self.system_prompt = system_prompt or AGENT_SYSTEM_PROMPT
 
         # אתחול המודל עם תיוג Token usage
-        self.llm = ChatOpenAI(model=model_name, temperature=0,request_timeout=self.timeout_seconds)
+        self.llm = ChatOpenAI(model=model_name, temperature=temperature,request_timeout=self.timeout_seconds)
         
         # יצירת ה-Agent של LangGraph
         self.graph = create_react_agent(
             model=self.llm,
             tools=ALL_TOOLS,
-            prompt=AGENT_SYSTEM_PROMPT
+            prompt=self.system_prompt
         )
 
-    def run_task(self, task_data: Dict[str, Any], run_number: int = 1) -> Dict[str, Any]:
+    def run_task(
+        self,
+        task_data: Dict[str, Any],
+        run_number: int = 1,
+        on_step: Optional[Callable[[Dict[str, Any]], None]] = None
+    ) -> Dict[str, Any]:
         """
         מריץ משימה יחידה דרך ה-LangGraph Agent עם מדידת זמנים, ניטור טוקנים, וחישוב מטריקות.
         """
@@ -76,6 +85,11 @@ class LangGraphAgentRunner:
         final_text = ""
         status = "success"
         error_message = None
+
+        def _emit(step: Dict[str, Any]):
+            trace_steps.append(step)
+            if on_step:
+                on_step(step)
 
         try:
             # הרצת ה-Graph בדרייבר Stream לצורך מעקב צעד-אחר-צעד ואיסוף מטריקות
@@ -104,7 +118,7 @@ class LangGraphAgentRunner:
                         for tc in last_msg.tool_calls:
                             tool_calls_count += 1
                             used_tools.append(tc["name"])
-                            trace_steps.append({
+                            _emit({
                                 "step": "tool_call",
                                 "tool": tc["name"],
                                 "args": tc["args"]
@@ -113,7 +127,7 @@ class LangGraphAgentRunner:
                         final_text = last_msg.content
 
                 elif isinstance(last_msg, ToolMessage):
-                    trace_steps.append({
+                    _emit({
                         "step": "tool_result",
                         "tool": last_msg.name,
                         "content": str(last_msg.content)[:300]  # קיצור למניעת לוג נפוח
@@ -128,6 +142,14 @@ class LangGraphAgentRunner:
                 error_message = f"Runtime error: {str(e)}"
             
             final_text = f"ERROR: Task execution stopped due to: {error_message}"
+
+        if on_step:
+            on_step({
+                "step": "final",
+                "content": final_text,
+                "status": status,
+                "error_message": error_message
+            })
 
         latency = time.time() - start_time
 

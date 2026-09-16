@@ -7,7 +7,7 @@ import os
 import time
 import json
 import inspect
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Callable
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -31,8 +31,13 @@ from tools import ALL_TOOLS, search_docs, calculator, policy_lookup_by_id
 # ---------------------------------------------------------------------------
 
 class UnitOfWorkTracer:
-    def __init__(self, log_file: str = "team_execution_traces.jsonl"):
+    def __init__(
+        self,
+        log_file: str = "team_execution_traces.jsonl",
+        on_event: Optional[Callable[[Dict[str, Any]], None]] = None
+    ):
         self.log_file = log_file
+        self.on_event = on_event
 
     def log_event(self, task_id: str, run_num: int, seq: int, agent: str, 
                   event: str, owner: str, duration_ms: float, 
@@ -51,6 +56,8 @@ class UnitOfWorkTracer:
         }
         with open(self.log_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+        if self.on_event:
+            self.on_event(log_entry)
 
     def log_summary(self, task_id: str, run_num: int, terminal_state: str, 
                     total_turns: int, total_duration_sec: float, 
@@ -67,6 +74,8 @@ class UnitOfWorkTracer:
         }
         with open(self.log_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(summary_entry, ensure_ascii=False) + "\n")
+        if self.on_event:
+            self.on_event(summary_entry)
 
 
 # ---------------------------------------------------------------------------
@@ -137,15 +146,28 @@ class MultiAgentTeam:
     def __init__(
         self, 
         model_name: str = "gpt-4o-mini",
-        procedural_memory_path: str = "AGENTS.md"
+        procedural_memory_path: str = "AGENTS.md",
+        temperature: float = 0.0,
+        procedural_memory_text: Optional[str] = None,
+        max_turns: int = 8,
+        max_tokens: int = 12000,
+        timeout_seconds: float = 45.0,
+        log_file: str = "team_execution_traces.jsonl",
+        on_event: Optional[Callable[[Dict[str, Any]], None]] = None
     ):
-        self.llm = ChatOpenAI(model=model_name, temperature=0, request_timeout=30.0)
-        self.tracer = UnitOfWorkTracer()
-        self.safety_nets = SafetyNetChecker()
+        self.llm = ChatOpenAI(model=model_name, temperature=temperature, request_timeout=30.0)
+        self.tracer = UnitOfWorkTracer(log_file=log_file, on_event=on_event)
+        self.safety_nets = SafetyNetChecker(
+            max_turns=max_turns,
+            max_tokens=max_tokens,
+            timeout_seconds=timeout_seconds
+        )
 
-        # Load procedural memory if available
+        # Load procedural memory: explicit text wins over the file on disk
         self.procedural_memory = ""
-        if os.path.exists(procedural_memory_path):
+        if procedural_memory_text is not None:
+            self.procedural_memory = procedural_memory_text
+        elif os.path.exists(procedural_memory_path):
             with open(procedural_memory_path, "r", encoding="utf-8") as f:
                 self.procedural_memory = f.read()
 
@@ -246,7 +268,8 @@ CRITICAL ROUTING RULES:
                     agent=AgentName.ORCHESTRATOR.value, event="handoff_decision",
                     owner=current_owner, duration_ms=duration,
                     input_tokens=150, output_tokens=50,
-                    destination=handoff.destination, reason=handoff.reason
+                    destination=handoff.destination, reason=handoff.reason,
+                    handoff_payload=handoff.payload.model_dump()
                 )
 
                 if handoff.destination == AgentName.ORCHESTRATOR.value:
@@ -256,7 +279,7 @@ CRITICAL ROUTING RULES:
                     break
                 else:
                     state["last_active"] = handoff.destination
-                    state["handoff_data"] = handoff.payload.dict()
+                    state["handoff_data"] = handoff.payload.model_dump()
                     state["route_history"].append(handoff.destination)
                     state["agent_turns_count"] += 1
 
@@ -312,7 +335,7 @@ CRITICAL ROUTING RULES:
                     constraints=payload.constraints,
                     facts=updated_facts,
                     open_question=f"Synthesize or evaluate step after {current_owner}"
-                ).dict()
+                ).model_dump()
 
                 final_answer = worker_res_text
 
