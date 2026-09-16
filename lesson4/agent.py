@@ -185,3 +185,5 @@ if __name__ == "__main__":
     print(f"Status: {res['status']}")
     print(f"Latency: {res['latency_seconds']}s | Tokens: {res['total_tokens']} | Tool Calls: {res['tool_calls_count']}")
     print(f"Final Answer:\n{res['final_answer']}")
+
+    

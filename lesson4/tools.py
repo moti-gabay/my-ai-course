@@ -22,19 +22,16 @@ def search_docs(query: str) -> str:
             return "ERROR: Query cannot be empty."
         
         # סימולציית כישלון עבור משימת tool_fails
-        if "clause 99.B" in query or "flood coverage" in query.lower():
+        if "clause 99.B" in query.lower() and "fail" in query.lower():
             return "ERROR: Document retrieval service failed or database connection timeout."
 
-        # פה משלבים את ה-Retriever המאומת מ-Assignment 3 (למשל VectorStore / FAISS)
-        # לצורך ההדגמה:
         results = [
-            f"[Doc 1]: Policy covers property damage up to $100,000 with a standard deductible of $1,000.",
-            f"[Doc 2]: Water pipe leak deductible is set at $1,500. Water damage from flooding requires endorsement 99.B."
+            "[Doc 1]: Policy covers property damage up to $100,000 with a standard deductible of $1,000.",
+            "[Doc 2]: Water pipe leak deductible is set at $1,500. Water damage from flooding requires endorsement 99.B.",
+            "[Doc 3]: Medical expenses coverage limit is $25,000 per policy year.",
+            "[Doc 4]: Part D collision deductible is standard $1,000 with a 5% administrative surcharge on premiums."
         ]
         
-        if not results:
-            return f"NO_RESULTS: No documents found matching query: '{query}'."
-            
         return "\n".join(results)
 
     except Exception as e:
@@ -66,7 +63,6 @@ def calculator(expression: str) -> str:
         if not clean_expr.strip():
             return f"ERROR: Invalid expression '{expression}'. Only numbers and math operators allowed."
 
-        # חישוב בטוח
         result = eval(clean_expr, {"__builtins__": None, "math": math})
         return f"RESULT: {result}"
 
@@ -77,27 +73,35 @@ def calculator(expression: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Tool 3: Web Search / External Lookup (web_search)
+# Tool 3: Policy Clause Direct Lookup (policy_lookup_by_id)
 # ---------------------------------------------------------------------------
-class WebSearchInput(BaseModel):
-    query: str = Field(description="Search terms for external knowledge or general web search.")
+class PolicyLookupInput(BaseModel):
+    clause_id: str = Field(description="Direct ID of the clause or endorsement to look up, e.g., '99.B' or 'PART_D'.")
 
-@tool("web_search", args_schema=WebSearchInput)
-def web_search(query: str) -> str:
+@tool("policy_lookup_by_id", args_schema=PolicyLookupInput)
+def policy_lookup_by_id(clause_id: str) -> str:
     """
-    Search for general external information not found in the insurance corpus.
-    Use ONLY if search_docs returns no relevant results and the information requires live external data.
+    Lookup policy clause or endorsement details directly by clause ID (e.g., '99.B').
+    Use this for direct structural code lookups in policy docs.
     """
     try:
-        if not query or not query.strip():
-            return "ERROR: Web search query cannot be empty."
+        if not clause_id or not clause_id.strip():
+            return "ERROR: Clause ID cannot be empty."
 
-        # סימולציה / שילוב API
-        return f"NO_RESULTS: Web search is restricted to trusted enterprise data sources. No external result for '{query}'."
+        clean_id = clause_id.strip().upper()
+
+        if "99.B" in clean_id or "99B" in clean_id:
+            return "Endorsement 99.B: Covers water damage resulting from natural flooding with a special deductible of $1,500."
+        elif "PART_D" in clean_id or "PART D" in clean_id:
+            return "Part D Coverage: Specifies collision deductible of $1,000 and 5% administrative surcharge."
+        elif "12" in clean_id:
+            return "Clause 12: General property damage liability limits up to $100,000."
+        else:
+            return f"NO_RESULTS: Policy clause '{clause_id}' lookup not found in direct index."
 
     except Exception as e:
-        return f"ERROR: Web search failed: {str(e)}"
+        return f"ERROR: Policy lookup failed: {str(e)}"
 
 
-# רשימת הכלים ליצוא עבור ה-Agent
-ALL_TOOLS = [search_docs, calculator, web_search]
+# רשימת הכלים היצואים עבור ה-Agent
+ALL_TOOLS = [search_docs, calculator, policy_lookup_by_id]

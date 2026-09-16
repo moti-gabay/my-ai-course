@@ -2,273 +2,574 @@
   {
     "task_id": "t01",
     "task": "If I have a claim for $12,000 for building damage and my deductible is $1,000, what amount will the insurer pay after deductible and 18% VAT?",
+    "type": "multi_hop",
+    "answerable": true,
     "success_criteria": "answer contains '12,980' or '12980' (or accurate math result based on deductible/VAT step)",
     "reference_answer": "($12,000 - $1,000) * 1.18 = $12,980",
-    "type": "multi_hop",
-    "expected_tools": [
-      "search_docs",
-      "calculator"
+    "expected_agents": [
+      "researcher",
+      "analyst",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst"
+    ]
   },
   {
     "task_id": "t02",
     "task": "What is the liability limit for bodily injury per person, and how much would the policy pay in total for 3 injured people if each claims the maximum limit?",
+    "type": "multi_hop",
+    "answerable": true,
     "success_criteria": "retrieves bodily injury limit per person and correctly multiplies it by 3 using calculator",
     "reference_answer": "Multiplies per-person limit by 3",
-    "type": "multi_hop",
-    "expected_tools": [
-      "search_docs",
-      "calculator"
+    "expected_agents": [
+      "researcher",
+      "analyst",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst"
+    ]
   },
   {
     "task_id": "t03",
     "task": "Does the policy cover water damage, and if so, what is the specific deductible for water pipe leaks?",
+    "type": "multi_hop",
+    "answerable": true,
     "success_criteria": "mentions water damage coverage status AND water pipe leak deductible",
     "reference_answer": "Combines water damage coverage terms with deductible clause",
-    "type": "multi_hop",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "analyst",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst"
+    ]
   },
   {
     "task_id": "t04",
     "task": "Calculate the total annual premium if the base monthly premium is $150 and there is a 5% administrative surcharge added to the annual total.",
+    "type": "multi_hop",
+    "answerable": true,
     "success_criteria": "answer contains '1890' (150 * 12 * 1.05)",
     "reference_answer": "150 * 12 = 1800; 1800 * 1.05 = 1890",
-    "type": "multi_hop",
-    "expected_tools": [
-      "calculator"
+    "expected_agents": [
+      "researcher",
+      "analyst",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst"
+    ]
   },
   {
     "task_id": "t05",
     "task": "What are the cancellation notice requirements for the insurer, and what percentage of premium is refunded if canceled after 90 days?",
+    "type": "multi_hop",
+    "answerable": true,
     "success_criteria": "cites notice period days AND refund percentage/pro-rata calculation",
     "reference_answer": "Combines notice period clauses with refund terms",
-    "type": "multi_hop",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "analyst",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst"
+    ]
   },
   {
     "task_id": "t06",
     "task": "If medical expenses coverage limit is $25,000 and 3 claims of $10,000, $8,000, and $9,000 are filed, what is the remaining coverage capacity?",
+    "type": "multi_hop",
+    "answerable": true,
     "success_criteria": "answer contains '0' or states limit exceeded by $2,000",
     "reference_answer": "25000 - (10000 + 8000 + 9000) = -2000 (Limit reached)",
-    "type": "multi_hop",
-    "expected_tools": [
-      "search_docs",
-      "calculator"
+    "expected_agents": [
+      "researcher",
+      "analyst",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst"
+    ]
   },
   {
     "task_id": "t07",
     "task": "Hello! What kind of tasks can you help me with today?",
+    "type": "no_tool",
+    "answerable": true,
     "success_criteria": "tool_calls == 0 and provides clear overview of capabilities",
     "reference_answer": "Greeting response listing available services without calling tools.",
-    "type": "no_tool",
-    "expected_tools": [],
-    "answerable": true
+    "expected_agents": [
+      "orchestrator"
+    ],
+    "capable_agents": [
+      "orchestrator"
+    ]
   },
   {
     "task_id": "t08",
     "task": "Can you summarize the advice you just provided in our previous sentence?",
+    "type": "no_tool",
+    "answerable": true,
     "success_criteria": "tool_calls == 0",
     "reference_answer": "Direct conversational summary without tool invocation.",
-    "type": "no_tool",
-    "expected_tools": [],
-    "answerable": true
+    "expected_agents": [
+      "orchestrator"
+    ],
+    "capable_agents": [
+      "orchestrator"
+    ]
   },
   {
     "task_id": "t09",
     "task": "What is the general purpose of an insurance policy deductible?",
+    "type": "no_tool",
+    "answerable": true,
     "success_criteria": "tool_calls == 0",
     "reference_answer": "General knowledge explanation of insurance deductibles without specific doc retrieval.",
-    "type": "no_tool",
-    "expected_tools": [],
-    "answerable": true
+    "expected_agents": [
+      "orchestrator"
+    ],
+    "capable_agents": [
+      "orchestrator"
+    ]
   },
   {
     "task_id": "t10",
     "task": "What is the policy owner's personal credit score required for coverage approval?",
+    "type": "unanswerable",
+    "answerable": false,
     "success_criteria": "refused == True",
     "reference_answer": "Refusal statement that credit score requirements are not mentioned in the corpus.",
-    "type": "unanswerable",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": false
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t11",
     "task": "Does this insurance policy cover damage caused by orbital space debris impact in 2027?",
+    "type": "unanswerable",
+    "answerable": false,
     "success_criteria": "refused == True",
     "reference_answer": "Clean refusal after bounded search.",
-    "type": "unanswerable",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": false
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t12",
     "task": "What is the exact repair cost for a 2024 Tesla Model Y bumper at Dan's Auto Shop in Tel Aviv?",
+    "type": "unanswerable",
+    "answerable": false,
     "success_criteria": "refused == True",
     "reference_answer": "Refusal stating specific shop repair costs are unavailable.",
-    "type": "unanswerable",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": false
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t13",
     "task": "Search for policy clause 99.B regarding flood coverage.",
+    "type": "tool_fails",
+    "answerable": false,
     "success_criteria": "refused == True or states service unavailable without hallucinating",
     "reference_answer": "Graceful failure message indicating tool failure.",
-    "type": "tool_fails",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": false
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t14",
     "task": "Calculate the compound interest on $5,000 at 4% for 3 years.",
+    "type": "tool_fails",
+    "answerable": false,
     "success_criteria": "refused == True or reports calculation service failure without guessing",
     "reference_answer": "Graceful error handling when calculator tool fails.",
-    "type": "tool_fails",
-    "expected_tools": [
-      "calculator"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": false
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t15",
     "task": "What is the minimum limit of liability for property damage under Virginia law in this policy?",
+    "type": "single",
+    "answerable": true,
     "success_criteria": "cites exact dollar limit for property damage under VA law",
     "reference_answer": "Refers to specific liability amount from policy text.",
-    "type": "single",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t16",
     "task": "What is the standard deductible for collision coverage under this policy?",
+    "type": "single",
+    "answerable": true,
     "success_criteria": "cites exact collision deductible dollar amount",
     "reference_answer": "Collision deductible dollar amount.",
-    "type": "single",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t17",
     "task": "How many days does the insured have to report a new vehicle acquisition?",
+    "type": "single",
+    "answerable": true,
     "success_criteria": "contains correct number of days (e.g., 14 or 30 days)",
     "reference_answer": "Reporting window in days.",
-    "type": "single",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t18",
     "task": "Are custom equipment and non-factory modifications covered under Part D?",
+    "type": "single",
+    "answerable": true,
     "success_criteria": "states coverage limitations/exclusions for custom equipment",
     "reference_answer": "Explanation of custom equipment coverage limits.",
-    "type": "single",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t19",
     "task": "What constitutes an 'insured person' under Part A - Liability Coverage?",
+    "type": "single",
+    "answerable": true,
     "success_criteria": "lists definitions of insured person (family members, permissive users)",
     "reference_answer": "Definition list of insured parties.",
-    "type": "single",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t20",
     "task": "What is 4500 divided by 12?",
+    "type": "single",
+    "answerable": true,
     "success_criteria": "answer contains '375'",
     "reference_answer": "375",
-    "type": "single",
-    "expected_tools": [
-      "calculator"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t21",
     "task": "Does comprehensive coverage pay for windshield repair without a deductible?",
+    "type": "single",
+    "answerable": true,
     "success_criteria": "states policy terms regarding glass repair deductible waiver",
     "reference_answer": "Windshield deductible policy rule.",
-    "type": "single",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t22",
     "task": "What geographical territory is covered under the policy conditions?",
+    "type": "single",
+    "answerable": true,
     "success_criteria": "mentions covered regions (e.g., USA, territories, Canada)",
     "reference_answer": "Policy territory definitions.",
-    "type": "single",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t23",
     "task": "What is the grace period for late premium payments before policy cancellation?",
+    "type": "single",
+    "answerable": true,
     "success_criteria": "states grace period duration in days",
     "reference_answer": "Payment grace period days.",
-    "type": "single",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t24",
     "task": "Does the policy cover towing and labor costs by default?",
+    "type": "single",
+    "answerable": true,
     "success_criteria": "states whether towing is included automatically or requires endorsement",
     "reference_answer": "Towing coverage status.",
-    "type": "single",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
   },
   {
     "task_id": "t25",
     "task": "What happens if an accident occurs in a state with higher financial responsibility limits than this policy?",
+    "type": "single",
+    "answerable": true,
     "success_criteria": "explains Out-of-State Coverage provision (limits automatically adjust)",
     "reference_answer": "Out-of-state coverage adjustment clause.",
-    "type": "single",
-    "expected_tools": [
-      "search_docs"
+    "expected_agents": [
+      "researcher",
+      "writer"
     ],
-    "answerable": true
+    "capable_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ]
+  },
+  {
+    "task_id": "t26",
+    "task": "Find the water damage deductible in the policy, then calculate the total payout for a $15,000 claim including 18% VAT.",
+    "type": "cross_domain",
+    "answerable": true,
+    "success_criteria": "answer contains '$15,930' or '15,930'",
+    "reference_answer": "Deductible is $1,500. Net claim is $13,500. With 18% VAT ($2,430), total payout is $15,930.",
+    "expected_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ],
+    "capable_agents": [
+      "researcher",
+      "analyst"
+    ]
+  },
+  {
+    "task_id": "t27",
+    "task": "Locate policy clause 99.B for flood coverage and compute the premium surcharge of 5% on a base premium of $2,000.",
+    "type": "cross_domain",
+    "answerable": true,
+    "success_criteria": "answer contains '$2,100' or '2100'",
+    "reference_answer": "Clause 99.B covers flood. Base $2,000 + 5% surcharge ($100) equals $2,100.",
+    "expected_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ],
+    "capable_agents": [
+      "researcher",
+      "analyst"
+    ]
+  },
+  {
+    "task_id": "t28",
+    "task": "What is the property damage liability limit in the policy, and how much capacity remains after two claims of $40,000 and $35,000?",
+    "type": "cross_domain",
+    "answerable": true,
+    "success_criteria": "answer contains '$25,000' or '25000'",
+    "reference_answer": "Limit is $100,000. Total claims $75,000. Remaining capacity is $25,000.",
+    "expected_agents": [
+      "researcher",
+      "analyst",
+      "writer"
+    ],
+    "capable_agents": [
+      "researcher",
+      "analyst"
+    ]
+  },
+  {
+    "task_id": "t29",
+    "task": "Why is my premium calculation so confusing? Can you check what the policy says about administrative surcharges?",
+    "type": "misroute_bait",
+    "answerable": true,
+    "success_criteria": "answer contains '5%' or 'surcharge'",
+    "reference_answer": "The policy specifies a 5% administrative surcharge under Part D.",
+    "expected_agents": [
+      "researcher",
+      "writer"
+    ],
+    "capable_agents": [
+      "researcher"
+    ]
+  },
+  {
+    "task_id": "t30",
+    "task": "Can you calculate how friendly your customer support is based on policy clause 12?",
+    "type": "misroute_bait",
+    "answerable": false,
+    "success_criteria": "refused == True or answer contains 'unanswerable' or 'cannot answer'",
+    "reference_answer": "The policy does not contain metrics regarding customer support friendliness.",
+    "expected_agents": [
+      "orchestrator"
+    ],
+    "capable_agents": [
+      "orchestrator",
+      "researcher"
+    ]
+  },
+  {
+    "task_id": "t31",
+    "task": "Summarise the collision coverage deductible policy — in Hebrew, and under 30 words.",
+    "type": "handoff_stress",
+    "answerable": true,
+    "success_criteria": "language == 'he' and word_count <= 30 and answer contains '1,000' or '1000'",
+    "reference_answer": "השתתפות עצמית סטנדרטית לנזק מכיסוי התנגשות הינה $1,000 בהתאם לתנאי הפוליסה.",
+    "expected_agents": [
+      "researcher",
+      "writer"
+    ],
+    "capable_agents": [
+      "researcher",
+      "writer"
+    ]
+  },
+  {
+    "task_id": "t32",
+    "task": "List the medical expenses coverage limit — formatted strictly as a bulleted list in Hebrew.",
+    "type": "handoff_stress",
+    "answerable": true,
+    "success_criteria": "language == 'he' and answer contains '$25,000' or '25,000'",
+    "reference_answer": "* תקרת כיסוי הוצאות רפואיות: $25,000",
+    "expected_agents": [
+      "researcher",
+      "writer"
+    ],
+    "capable_agents": [
+      "researcher",
+      "writer"
+    ]
+  },
+  {
+    "task_id": "t33",
+    "task": "What types of tasks can this multi-agent system help me with?",
+    "type": "no_tool",
+    "answerable": true,
+    "success_criteria": "worker_turns == 0 and refused == False",
+    "reference_answer": "I can assist with policy lookups, claims calculations, and coverage details.",
+    "expected_agents": [
+      "orchestrator"
+    ],
+    "capable_agents": [
+      "orchestrator"
+    ]
+  },
+  {
+    "task_id": "t34",
+    "task": "What is the exact coverage limit for damage caused by volcanic eruptions in Iceland?",
+    "type": "unanswerable",
+    "answerable": false,
+    "success_criteria": "refused == True",
+    "reference_answer": "The policy knowledge base does not contain information regarding volcanic eruption coverage in Iceland.",
+    "expected_agents": [
+      "researcher"
+    ],
+    "capable_agents": [
+      "researcher",
+      "orchestrator"
+    ]
+  },
+  {
+    "task_id": "t35",
+    "task": "What is the interest rate applied to overdue monthly premium payments after 180 days?",
+    "type": "unanswerable",
+    "answerable": false,
+    "success_criteria": "refused == True",
+    "reference_answer": "The available policy documents do not specify overdue premium interest rates.",
+    "expected_agents": [
+      "researcher"
+    ],
+    "capable_agents": [
+      "researcher",
+      "orchestrator"
+    ]
   }
 ]
