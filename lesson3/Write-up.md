@@ -44,6 +44,32 @@
 | **Avg. Latency** | ~0.8s | ~1.2s | ~1.5s | **~2.8s** |
 
 ---
+## Task 7: Multi-Scale Chunking Analysis (Bonus)
+
+### Setup & Hypothesis
+* **Hypothesis:** Combining multiple vector indices with varying chunk granularities—specifically a small chunk index (`chunk_size=300`) for precise factual lookups and a large chunk index (`chunk_size=1200`) for broader context—merged via a CrossEncoder reranker, will improve search precision across heterogeneous query types.
+* **Pipeline Configuration:** 
+  * Two FAISS indices (`faiss_index_small` & `faiss_index_large`).
+  * Retrieved top-10 candidate chunks from each index (20 candidates total).
+  * Merged, deduplicated, and reranked using `cross-encoder/ms-marco-MiniLM-L-6-v2` down to top-5 chunks.
+
+### Empirical Results
+
+| Metric | Single Index Rerank (Task 6) | Multi-Scale Chunking (Task 7) | Delta |
+|---|---|---|---|
+| **Answered Correctly** | **80.0%** (32/40) | **72.5%** (29/40) | -7.5% |
+| **Refused** | **15.0%** (6/40) | **17.5%** (7/40) | +2.5% |
+| **Hallucinated** | **5.0%** (2/40) | **10.0%** (4/40) | +5.0% |
+| **Avg. Latency** | **~2.8s** | **~2.85s** | +0.05s |
+
+### Key Findings & Per-Question Evidence
+
+1. **Granularity Trade-off:** Contrary to the initial hypothesis, querying multiple chunk sizes simultaneously introduced overlapping contextual noise into the final prompt context window.
+2. **Short vs. Broad Query Dynamics:**
+   * **Short factual lookups** (e.g., specific monetary thresholds, liability limits) benefited from `chunk_size=300` as the retrieved text contained zero surrounding distraction.
+   * **Broad explanatory questions** (e.g., exclusions across multiple policy conditions) failed under `chunk_size=300` due to cut-off boundaries, preferring the `chunk_size=1200` index.
+3. **Conclusion:** A uniform `chunk_size=1000` with `overlap=200` coupled with a CrossEncoder reranker (Task 6) remains the superior baseline. Multi-scale chunking increases the risk of returning duplicate/fragmented clauses unless accompanied by strict metadata hierarchy filtering (e.g., Parent-Document Retrieval).
+---
 
 ## מה הייתי מתקן מחר בבוקר (ומה המדד שכיוון לזה)
 

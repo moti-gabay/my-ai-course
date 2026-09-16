@@ -6,13 +6,18 @@ from langchain_community.vectorstores import FAISS
 from sentence_transformers import CrossEncoder
 
 # 1. הגדרות נתיבים ומודלים
-INDEX_DIR = "index"
 EMBEDDING_MODEL_NAME = "BAAI/bge-small-en-v1.5"
 
-# 2. טעינת מודל ה-Embeddings ואינדקס FAISS
+# 2. טעינת מודל ה-Embeddings ושני אינדקסי ה-FAISS (Small + Large)
 embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
-vectorstore = FAISS.load_local(
-    INDEX_DIR, 
+
+vs_small = FAISS.load_local(
+    "faiss_index_small", 
+    embeddings, 
+    allow_dangerous_deserialization=True
+)
+vs_large = FAISS.load_local(
+    "faiss_index_large", 
     embeddings, 
     allow_dangerous_deserialization=True
 )
@@ -22,25 +27,33 @@ anthropic_client = Anthropic()
 reranker_model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
 
-def retrieve_context_with_rerank(question: str, initial_top_k: int = 20, final_top_k: int = 5) -> list:
+def retrieve_multi_scale_with_rerank(question: str, top_k_per_index: int = 10, final_top_k: int = 5) -> list:
     """
-    1. שולף initial_top_k קטעים מ-FAISS.
-    2. מדרג אותם מחדש בעזרת CrossEncoder.
-    3. מחזיר את final_top_k הקטעים הטובים ביותר.
+    1. שולף top_k מאינדקס Small ו-top_k מאינדקס Large.
+    2. מאחד את המסמכים ומסיר כפילויות.
+    3. מדרג מחדש (Rerank) עם CrossEncoder ומחזיר את ה-top_k הסופי.
     """
-    initial_docs = vectorstore.similarity_search(question, k=initial_top_k)
+    docs_small = vs_small.similarity_search(question, k=top_k_per_index)
+    docs_large = vs_large.similarity_search(question, k=top_k_per_index)
+
+    # איחוד והסרת כפילויות תוכן
+    all_docs = docs_small + docs_large
+    unique_docs = []
+    seen_contents = set()
     
-    if not initial_docs:
+    for doc in all_docs:
+        if doc.page_content not in seen_contents:
+            unique_docs.append(doc)
+            seen_contents.add(doc.page_content)
+
+    if not unique_docs:
         return []
 
-    # יצירת זוגות (שאלה, קטע) עבור ה-Reranker
-    pairs = [[question, doc.page_content] for doc in initial_docs]
-
-    # חישוב ציוני התאמה
+    # Reranking בעזרת CrossEncoder
+    pairs = [[question, doc.page_content] for doc in unique_docs]
     scores = reranker_model.predict(pairs)
 
-    # מיון המסמכים לפי הציון הגבוה ביותר
-    doc_score_pairs = list(zip(initial_docs, scores))
+    doc_score_pairs = list(zip(unique_docs, scores))
     doc_score_pairs.sort(key=lambda x: x[1], reverse=True)
 
     return [doc for doc, score in doc_score_pairs[:final_top_k]]
@@ -69,14 +82,13 @@ Question: {question}"""
     return response.content[0].text.strip()
 
 
-def run_rag_pipeline(
-    question: str, top_k: int = 5, initial_top_k: int = 20
-) -> dict:
-    """הרצת תהליך RAG מלא: שליפה מורחבת -> Reranking -> יצירת תשובה."""
+def run_rag_pipeline(question: str, top_k: int = 5, top_k_per_index: int = 10) -> dict:
+    """הרצת תהליך RAG מלא: שליפה מולטי-סקייל -> Reranking -> יצירת תשובה."""
     start_time = time.time()
 
-    retrieved_docs = retrieve_context_with_rerank(
-        question, initial_top_k=initial_top_k, final_top_k=top_k
+    # שימוש בשליפה המאוחדת Multi-Scale
+    retrieved_docs = retrieve_multi_scale_with_rerank(
+        question, top_k_per_index=top_k_per_index, final_top_k=top_k
     )
 
     response_text = generate_rag_response(question, retrieved_docs)
@@ -94,7 +106,7 @@ def run_rag_pipeline(
 
 if __name__ == "__main__":
     test_q = "What are the minimum limits of liability required by Virginia law under this auto policy?"
-    print(f"Testing FAISS RAG Pipeline...\nQuestion: {test_q}\n")
+    print(f"Testing Multi-Scale FAISS RAG Pipeline...\nQuestion: {test_q}\n")
     
     res = run_rag_pipeline(test_q, top_k=3)
     

@@ -6,7 +6,10 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 CORPUS_DIR = "corpus"
-INDEX_DIR = "index"
+EMBEDDING_MODEL_NAME = "BAAI/bge-small-en-v1.5"
+
+# אתחול מודל ה-Embeddings
+embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 
 def load_documents(corpus_dir):
     documents = []
@@ -21,7 +24,6 @@ def load_documents(corpus_dir):
             print(f"📄 Loading PDF: {file_name}")
             loader = PyPDFLoader(file_path)
             docs = loader.load()
-            # Enrich metadata
             for doc in docs:
                 doc.metadata["doc_name"] = file_name
                 doc.metadata["page"] = str(doc.metadata.get("page", 0) + 1)
@@ -38,43 +40,22 @@ def load_documents(corpus_dir):
     print(f"✅ Loaded {len(documents)} document pages/files in total.")
     return documents
 
-def build_and_save_index():
-    # 1. Parse
-    docs = load_documents(CORPUS_DIR)
-    if not docs:
-        print("❌ No documents found. Add files to 'corpus/' and re-run.")
-        return
-
-    # 2. Chunk (Baseline settings)
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
+def create_and_save_index(docs, chunk_size, chunk_overlap, save_dir):
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap
     )
-    chunks = splitter.split_documents(docs)
-    print(f"✂️ Created {len(chunks)} text chunks.")
-
-    # 3. Embed
-    print("⏳ Initializing Embedding Model...")
-    embeddings = HuggingFaceEmbeddings(
-        model_name="BAAI/bge-small-en-v1.5"
-    )
-
-    # 4. Store
-    print("💾 Indexing chunks into FAISS vectorstore...")
+    chunks = text_splitter.split_documents(docs)
     vectorstore = FAISS.from_documents(chunks, embeddings)
-    vectorstore.save_local(INDEX_DIR)
-    print(f"🎉 Index successfully saved to '{INDEX_DIR}/'!")
-
-    # Task 3 Requirement: Inspection & Debugging
-    print("\n" + "="*50)
-    print("🔍 TASK 3 INSPECTION: 3 Random Chunks")
-    print("="*50)
-    sample_chunks = random.sample(chunks, min(3, len(chunks)))
-    for i, chunk in enumerate(sample_chunks, 1):
-        doc_name = chunk.metadata.get("doc_name", "Unknown")
-        page = chunk.metadata.get("page", "N/A")
-        print(f"\n--- Chunk Sample #{i} [{doc_name} | Page {page}] ---")
-        print(chunk.page_content[:300] + "...\n")
+    vectorstore.save_local(save_dir)
+    print(f"🎉 Index saved to '{save_dir}/' with {len(chunks)} chunks (size={chunk_size}).")
 
 if __name__ == "__main__":
-    build_and_save_index()
+    docs = load_documents(CORPUS_DIR)
+    
+    if docs:
+        # 1. יצירת אינדקס קטן (Small - 300) לעובדות נקודתיות
+        create_and_save_index(docs, chunk_size=300, chunk_overlap=50, save_dir="faiss_index_small")
+        
+        # 2. יצירת אינדקס גדול (Large - 1200) להקשר רחב ולשאילתות מורכבות
+        create_and_save_index(docs, chunk_size=1200, chunk_overlap=200, save_dir="faiss_index_large")

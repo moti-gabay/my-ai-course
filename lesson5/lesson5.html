@@ -1,0 +1,1295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lesson 5 — Advanced Agents &amp; Multi-Agent Systems</title>
+<style>
+  :root{
+    --accent:#ff2e97;
+    --accent2:#7c3aed;
+    --bg:#050509;
+    --ink:#f7f7ff;
+    --muted:#b9b9d6;
+    --card:rgba(255,255,255,.06);
+    --stroke:rgba(255,255,255,.14);
+    --font: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono: "SFMono-Regular",ui-monospace,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- animated background ---------- */
+  .bg{position:fixed;inset:0;overflow:hidden;z-index:0;filter:saturate(1.1)}
+  /* dark scrim over the color blobs so text always sits on a dark base */
+  .bg::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 120% at 50% 40%,rgba(5,5,9,.55),rgba(5,5,9,.86) 70%,rgba(5,5,9,.95));z-index:1}
+  .blob{position:absolute;width:60vmax;height:60vmax;border-radius:50%;filter:blur(80px);opacity:.22;mix-blend-mode:screen;will-change:transform}
+  .b1{background:radial-gradient(circle at 30% 30%,#ff2e97,transparent 60%);top:-15%;left:-10%;animation:float1 18s ease-in-out infinite}
+  .b2{background:radial-gradient(circle at 30% 30%,#00e5ff,transparent 60%);top:20%;right:-15%;animation:float2 22s ease-in-out infinite}
+  .b3{background:radial-gradient(circle at 30% 30%,#ffd000,transparent 60%);bottom:-20%;left:15%;animation:float3 26s ease-in-out infinite}
+  .b4{background:radial-gradient(circle at 30% 30%,#7c3aed,transparent 60%);bottom:-10%;right:5%;animation:float1 20s ease-in-out infinite reverse}
+  .accent-glow{position:fixed;inset:auto;width:70vmax;height:70vmax;border-radius:50%;filter:blur(100px);opacity:.13;z-index:0;
+    background:radial-gradient(circle,var(--accent),transparent 60%);top:50%;left:50%;transform:translate(-50%,-50%);
+    transition:background .7s ease}
+  @keyframes float1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vmax,4vmax) scale(1.15)}}
+  @keyframes float2{0%,100%{transform:translate(0,0) scale(1.1)}50%{transform:translate(-7vmax,5vmax) scale(.9)}}
+  @keyframes float3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(4vmax,-6vmax) scale(1.2)}}
+
+  /* ---------- deck ---------- */
+  .deck{position:relative;z-index:2;height:100%}
+  .slide{
+    position:absolute;inset:0;display:none;
+    padding:6vh 8vw;flex-direction:column;justify-content:center;
+  }
+  .slide.active{display:flex}
+  .slide.leaving{display:flex;animation:slideOut .35s forwards}
+  .slide.active{animation:slideIn .5s cubic-bezier(.2,.8,.2,1)}
+  @keyframes slideIn{from{opacity:0;transform:translateY(24px) scale(.99)}to{opacity:1;transform:none}}
+  @keyframes slideOut{to{opacity:0;transform:translateY(-18px) scale(.99)}}
+
+  .kicker{
+    display:inline-flex;align-items:center;gap:.6ch;align-self:flex-start;
+    font-size:clamp(.7rem,1.4vw,1rem);font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+    color:#0a0a14;background:linear-gradient(90deg,var(--accent),var(--accent2));
+    padding:.45em 1em;border-radius:999px;margin-bottom:.9em;
+    box-shadow:0 6px 24px -8px var(--accent);
+  }
+  h1.title{
+    font-size:clamp(1.9rem,5.2vw,4.2rem);line-height:1.04;margin:0 0 .5em;font-weight:850;letter-spacing:-.02em;
+    background:linear-gradient(120deg,#fff 20%,var(--accent) 120%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  ul.bullets{list-style:none;margin:0;padding:0;max-width:70ch}
+  ul.bullets li{
+    position:relative;padding:.5em 0 .5em 1.6em;
+    font-size:clamp(1rem,2.05vw,1.6rem);line-height:1.4;color:var(--ink);
+  }
+  ul.bullets li::before{
+    content:"";position:absolute;left:0;top:.95em;width:.7em;height:.7em;border-radius:3px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));transform:rotate(45deg);
+    box-shadow:0 0 14px -1px var(--accent);
+  }
+  ul.bullets li ul{list-style:none;margin:.35em 0 0;padding-left:.2em}
+  ul.bullets li ul li{font-size:.86em;color:var(--muted);padding:.28em 0 .28em 1.4em}
+  ul.bullets li ul li::before{width:.5em;height:.5em;top:1em;background:var(--muted);box-shadow:none}
+  strong{color:var(--accent);font-weight:800}
+  em{color:#ffd7ee;font-style:italic}
+  .sub{color:var(--muted);font-size:clamp(.85rem,1.6vw,1.15rem);margin-top:.6em;font-style:italic}
+  code{font-family:var(--mono);background:rgba(255,255,255,.1);color:#ffe08a;padding:.1em .45em;border-radius:6px;font-size:.86em}
+
+  /* reveal animation for content */
+  .reveal{opacity:0;animation:rise .6s cubic-bezier(.2,.75,.2,1) both}
+  .slide.active .reveal{animation-play-state:running}
+  @keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+
+  /* code block */
+  pre{
+    margin:.4em 0 .8em;background:rgba(6,6,18,.82);border:1px solid var(--stroke);
+    border-radius:14px;padding:1em 1.15em;overflow-x:auto;max-width:100%;width:fit-content;
+    box-shadow:0 20px 50px -20px #000, inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  /* size code so the longest line always fits the slide width — no scrolling */
+  pre code{background:none;color:#e9e9ff;font-size:clamp(.62rem,1.7vw,1.05rem);line-height:1.5;padding:0;
+    white-space:pre;display:block}
+  .tok-kw{color:#ff7edb}.tok-str{color:#8affc1}.tok-com{color:#7c85b8;font-style:italic}
+  .tok-fn{color:#7cc7ff}.tok-num{color:#ffd479}
+
+  /* table */
+  table{border-collapse:collapse;margin:.3em 0;max-width:100%;font-size:clamp(.8rem,1.7vw,1.35rem)}
+  th,td{border:1px solid var(--stroke);padding:.55em .9em;text-align:left}
+  thead th{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#0a0a14;font-weight:800}
+  tbody td:first-child{color:var(--muted);font-weight:700}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.04)}
+
+  /* ---------- diagrams ---------- */
+  .diagram{width:100%;max-width:min(92vw,1040px);height:auto;margin:.2em 0 .4em;display:block}
+  .diagram .box{fill:rgba(255,255,255,.07);stroke:rgba(255,255,255,.20);stroke-width:1.5}
+  .diagram .box-hi{fill:rgba(255,255,255,.10);stroke:var(--accent);stroke-width:2}
+  .diagram .lbl{fill:#f7f7ff;font-family:var(--font);font-size:20px;font-weight:700;text-anchor:middle}
+  .diagram .lbl-s{fill:#b9b9d6;font-family:var(--font);font-size:16px;font-weight:600;text-anchor:middle}
+  .diagram .lbl-t{fill:var(--accent);font-family:var(--font);font-size:17px;font-weight:800;text-anchor:middle;letter-spacing:.08em}
+  .diagram .link{stroke:var(--accent);stroke-width:2;fill:none}
+  .diagram .link-d{stroke:rgba(255,255,255,.35);stroke-width:2;fill:none;stroke-dasharray:6 6}
+
+  /* ---------- numbered step cards ---------- */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(.6em,1.3vw,1.15em);
+    width:100%;max-width:1180px;margin:.5em 0 .3em}
+  .step{padding:1em 1.05em 1.15em;border-radius:18px;border:1px solid var(--stroke);
+    background:var(--card);box-shadow:0 20px 50px -28px #000}
+  .step .n{font-size:clamp(1.5rem,3.2vw,2.5rem);font-weight:900;line-height:1;
+    background:linear-gradient(120deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .step .t{margin:.3em 0 .35em;font-weight:900;letter-spacing:.1em;text-transform:uppercase;
+    font-size:clamp(.8rem,1.5vw,1.15rem);color:var(--ink)}
+  .step .d{color:var(--muted);font-size:clamp(.72rem,1.32vw,1rem);line-height:1.42}
+  @media (max-width:900px){.steps{grid-template-columns:repeat(2,1fr)}}
+
+  /* ---------- two-column split ---------- */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(1em,2.4vw,2.4em);width:100%;max-width:1180px}
+  .split h3{margin:0 0 .1em;font-size:clamp(.85rem,1.7vw,1.25rem);letter-spacing:.1em;text-transform:uppercase;
+    font-weight:900;color:var(--ink)}
+  .split ul.bullets{max-width:none}
+  @media (max-width:820px){.split{grid-template-columns:1fr;gap:.4em}}
+
+  /* ---------- lead + section slides ---------- */
+  .slide.lead,.slide.section{align-items:center;text-align:center;justify-content:center}
+  .slide.lead .title{font-size:clamp(2.4rem,7vw,5.5rem)}
+  .slide.lead .sub{font-size:clamp(1rem,2.4vw,1.7rem);max-width:60ch}
+  .big-num{
+    font-size:clamp(4rem,16vw,12rem);font-weight:900;line-height:.9;letter-spacing:-.04em;
+    background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 10px 40px var(--accent));
+  }
+  .slide.section .title{font-size:clamp(1.8rem,5.5vw,4rem);margin-top:.1em}
+  .slide.section .kicker{align-self:center}
+
+  /* ladder chips on lead */
+  .chips{display:flex;flex-wrap:wrap;gap:.6em;justify-content:center;margin-top:1.4em}
+  .chip{padding:.5em 1em;border-radius:999px;border:1px solid var(--stroke);background:var(--card);
+    font-weight:700;font-size:clamp(.75rem,1.5vw,1.05rem);color:var(--ink)}
+  .chip b{color:var(--accent)}
+
+  /* ---------- chrome ---------- */
+  .progress{position:fixed;top:0;left:0;height:4px;z-index:10;background:linear-gradient(90deg,var(--accent),var(--accent2));
+    box-shadow:0 0 16px var(--accent);transition:width .4s cubic-bezier(.2,.8,.2,1);width:0}
+  .hud{position:fixed;bottom:18px;right:22px;z-index:10;display:flex;align-items:center;gap:14px;
+    color:var(--muted);font-size:.85rem;font-weight:700}
+  .hud .seg{padding:.3em .8em;border-radius:999px;background:var(--card);border:1px solid var(--stroke);color:var(--ink)}
+  .nav{position:fixed;bottom:16px;left:22px;z-index:10;display:flex;gap:10px}
+  .nav button{
+    width:44px;height:44px;border-radius:50%;border:1px solid var(--stroke);background:var(--card);color:var(--ink);
+    font-size:1.2rem;cursor:pointer;display:grid;place-items:center;transition:.2s;backdrop-filter:blur(6px)
+  }
+  .nav button:hover{background:var(--accent);color:#0a0a14;border-color:transparent;transform:translateY(-2px)}
+  .hint{position:fixed;top:16px;right:20px;z-index:10;color:var(--muted);font-size:.78rem;opacity:.7}
+
+
+  /* short viewports (720p projectors, 768p laptops): tighten so tall slides don't clip */
+  @media (max-height:720px){
+    .slide{padding:4.5vh 7vw}
+    h1.title{font-size:clamp(1.6rem,4.4vw,3.2rem);margin-bottom:.38em}
+    .kicker{margin-bottom:.55em}
+    ul.bullets li{padding:.36em 0 .36em 1.5em;font-size:clamp(.95rem,1.85vw,1.35rem)}
+    ul.bullets li::before{top:.82em}
+    .sub{font-size:clamp(.8rem,1.4vw,1rem);margin-top:.45em}
+    .step{padding:.75em .8em .85em;border-radius:14px}
+    .step .t{margin:.22em 0 .25em}
+    pre{padding:.75em .95em;margin:.3em 0 .6em}
+    pre code{font-size:clamp(.58rem,1.45vw,.92rem);line-height:1.42}
+    table{font-size:clamp(.75rem,1.5vw,1.1rem)}
+    th,td{padding:.4em .75em}
+    .diagram{max-width:min(84vw,880px)}
+    .chips{margin-top:1em}
+  }
+
+  @media (max-width:640px){
+    .slide{padding:8vh 7vw}
+    .hint{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .blob,.accent-glow{animation:none}
+    .reveal,.slide.active{animation:none;opacity:1}
+  }
+</style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <div class="blob b1"></div><div class="blob b2"></div>
+    <div class="blob b3"></div><div class="blob b4"></div>
+  </div>
+  <div class="accent-glow" aria-hidden="true"></div>
+
+  <div class="progress" id="progress"></div>
+  <div class="hint">← → navigate · <b>F</b> fullscreen</div>
+  <div class="deck" id="deck"></div>
+
+  <div class="nav">
+    <button id="prev" title="Previous (←)">‹</button>
+    <button id="next" title="Next (→)">›</button>
+  </div>
+  <div class="hud">
+    <span class="seg" id="segLabel"></span>
+    <span id="counter"></span>
+  </div>
+
+
+<script>
+/* ---------- segment palette ---------- */
+const SEG = {
+  op:  {name:"Opening",                a:"#ff2e97", b:"#ff8a3d"},
+  s1:  {name:"1 · Planners",           a:"#a855f7", b:"#6366f1"},
+  s2:  {name:"2 · MCP",                a:"#06d6f5", b:"#3b82f6"},
+  brk: {name:"Break",                  a:"#f59e0b", b:"#f43f5e"},
+  s3:  {name:"3 · Agentic RAG",        a:"#34d399", b:"#06b6d4"},
+  s4:  {name:"4 · Multi-Agent",        a:"#fb7185", b:"#f97316"},
+  s5:  {name:"5 · Memory",             a:"#38bdf8", b:"#a855f7"},
+  s6:  {name:"6 · Wrap",               a:"#ffd000", b:"#ff2e97"},
+};
+
+/* helper for code with tiny highlighting */
+function code(str){
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const KW = /^(from|import|class|def|return|print|for|in|if|not|None|while|else|elif|True|False|str|await|async)$/;
+  // Single pass over the raw string: each character is consumed exactly once,
+  // so inserted markup can never be re-matched by a later rule.
+  const re = /(#[^\n]*)|("""[\s\S]*?""")|("(?:[^"\\\n]|\\.)*")|('(?:[^'\\\n]|\\.)*')|(\b\d+\.?\d*\b)|([A-Za-z_]\w*)/g;
+  let out = "", last = 0, m;
+  while ((m = re.exec(str))){
+    out += esc(str.slice(last, m.index));
+    if      (m[1]) out += '<span class="tok-com">'+esc(m[1])+'</span>';
+    else if (m[2]) out += '<span class="tok-str">'+esc(m[2])+'</span>';
+    else if (m[3]) out += '<span class="tok-str">'+esc(m[3])+'</span>';
+    else if (m[4]) out += '<span class="tok-str">'+esc(m[4])+'</span>';
+    else if (m[5]) out += '<span class="tok-num">'+m[5]+'</span>';
+    else if (m[6]) out += KW.test(m[6]) ? '<span class="tok-kw">'+m[6]+'</span>' : esc(m[6]);
+    last = m.index + m[0].length;
+  }
+  out += esc(str.slice(last));
+  return '<pre><code>'+out+'</code></pre>';
+}
+
+/* ---------- diagrams (inline SVG, inherit segment accent) ---------- */
+// every slide lives in the DOM at once, so each diagram needs its own marker id —
+// a shared one would resolve to the first marker and inherit that slide's accent color
+const ARROW = id => `<defs><marker id="${id}" viewBox="0 0 10 10" refX="9.5" refY="5"
+  markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>`;
+
+/* Plan-and-Act: planner → executor → replan → back */
+const SVG_PLANACT = `<svg class="diagram reveal" viewBox="0 0 1000 300" role="img"
+  aria-label="Plan and Act: a strong planner writes the steps, a cheap executor runs one, a replanner revises what is left and hands back to the executor">
+  ${ARROW("ar-pa")}
+  <text class="lbl-t" x="160" y="58">STRONG MODEL</text>
+  <text class="lbl-t" x="490" y="58">CHEAP MODEL</text>
+  <text class="lbl-t" x="830" y="58">STRONG MODEL</text>
+
+  <rect class="box-hi" x="60"  y="78" width="200" height="88" rx="16"/>
+  <text class="lbl"   x="160" y="116">Planner</text>
+  <text class="lbl-s" x="160" y="144">writes the steps</text>
+
+  <rect class="box" x="390" y="78" width="200" height="88" rx="16"/>
+  <text class="lbl"   x="490" y="116">Executor</text>
+  <text class="lbl-s" x="490" y="144">does one step</text>
+
+  <rect class="box-hi" x="720" y="78" width="220" height="88" rx="16"/>
+  <text class="lbl"   x="830" y="116">Replan</text>
+  <text class="lbl-s" x="830" y="144">revise what's left</text>
+
+  <path class="link" d="M260 122 L384 122" marker-end="url(#ar-pa)"/>
+  <path class="link" d="M590 122 L714 122" marker-end="url(#ar-pa)"/>
+  <path class="link" d="M830 166 L830 232 L490 232 L490 172" marker-end="url(#ar-pa)"/>
+  <text class="lbl-s" x="660" y="258">the plan is allowed to change — that's the whole difference from Plan-and-Execute</text>
+  <text class="lbl-s" x="160" y="196">a human can approve it here</text>
+</svg>`;
+
+/* LLMCompiler: DAG + timeline comparison */
+const SVG_DAG = `<svg class="diagram reveal" viewBox="0 0 1000 320" role="img"
+  aria-label="LLMCompiler: the plan is a dependency graph, so independent tasks run in parallel and the timeline is shorter than sequential ReAct">
+  ${ARROW("ar-dag")}
+  <text class="lbl-t" x="290" y="34">PLAN AS A DAG</text>
+
+  <rect class="box" x="90" y="52"  width="140" height="56" rx="14"/>
+  <text class="lbl" x="160" y="88">T1</text>
+  <rect class="box" x="90" y="124" width="140" height="56" rx="14"/>
+  <text class="lbl" x="160" y="160">T2</text>
+  <rect class="box" x="90" y="196" width="140" height="56" rx="14"/>
+  <text class="lbl" x="160" y="232">T3</text>
+
+  <rect class="box-hi" x="350" y="124" width="150" height="56" rx="14"/>
+  <text class="lbl" x="425" y="160">T4</text>
+
+  <path class="link" d="M230 80 L344 142" marker-end="url(#ar-dag)"/>
+  <path class="link" d="M230 152 L344 152" marker-end="url(#ar-dag)"/>
+  <path class="link" d="M230 224 L344 172" marker-end="url(#ar-dag)"/>
+  <text class="lbl-s" x="290" y="286">independent → run at once · T4 waits for its deps</text>
+
+  <text class="lbl-t" x="760" y="34">TIMELINE</text>
+
+  <text class="lbl-s" x="760" y="66">ReAct — sequential</text>
+  <rect class="box" x="560" y="80" width="72" height="30" rx="8"/>
+  <rect class="box" x="640" y="80" width="72" height="30" rx="8"/>
+  <rect class="box" x="720" y="80" width="72" height="30" rx="8"/>
+  <rect class="box" x="800" y="80" width="72" height="30" rx="8"/>
+  <text class="lbl-s" x="596" y="102">T1</text>
+  <text class="lbl-s" x="676" y="102">T2</text>
+  <text class="lbl-s" x="756" y="102">T3</text>
+  <text class="lbl-s" x="836" y="102">T4</text>
+
+  <text class="lbl-s" x="760" y="156">LLMCompiler — parallel</text>
+  <rect class="box" x="560" y="170" width="72" height="26" rx="8"/>
+  <rect class="box" x="560" y="202" width="72" height="26" rx="8"/>
+  <rect class="box" x="560" y="234" width="72" height="26" rx="8"/>
+  <text class="lbl-s" x="596" y="189">T1</text>
+  <text class="lbl-s" x="596" y="221">T2</text>
+  <text class="lbl-s" x="596" y="253">T3</text>
+  <rect class="box-hi" x="648" y="202" width="72" height="26" rx="8"/>
+  <text class="lbl-s" x="684" y="221">T4</text>
+  <text class="lbl-s" x="760" y="286">half the wall clock — and no growing trace to re-send</text>
+</svg>`;
+
+/* MCP architecture */
+const SVG_MCP = `<svg class="diagram reveal" viewBox="0 0 1000 340" role="img"
+  aria-label="MCP architecture: the host owns the model and spawns one client per server; servers expose capabilities over stdio or HTTP and talk to backing systems">
+  ${ARROW("ar-mcp")}
+  <rect class="box-hi" x="40" y="26" width="920" height="118" rx="18"/>
+  <text class="lbl-t" x="500" y="54">HOST · owns the LLM and the user's trust boundary</text>
+  <rect class="box" x="180" y="68" width="240" height="56" rx="14"/>
+  <text class="lbl" x="300" y="103">MCP Client</text>
+  <rect class="box" x="580" y="68" width="240" height="56" rx="14"/>
+  <text class="lbl" x="700" y="103">MCP Client</text>
+
+  <rect class="box-hi" x="180" y="196" width="240" height="62" rx="14"/>
+  <text class="lbl" x="300" y="234">MCP Server</text>
+  <rect class="box-hi" x="580" y="196" width="240" height="62" rx="14"/>
+  <text class="lbl" x="700" y="234">MCP Server</text>
+
+  <path class="link" d="M300 124 L300 190" marker-end="url(#ar-mcp)"/>
+  <path class="link" d="M700 124 L700 190" marker-end="url(#ar-mcp)"/>
+  <text class="lbl-s" x="238" y="168">stdio · local</text>
+  <text class="lbl-s" x="772" y="168">HTTP · remote</text>
+
+  <path class="link-d" d="M300 258 L300 292"/>
+  <path class="link-d" d="M700 258 L700 292"/>
+  <text class="lbl-s" x="300" y="314">your DB · files · internal API</text>
+  <text class="lbl-s" x="700" y="314">third-party SaaS</text>
+</svg>`;
+
+/* Orchestrator–worker */
+const SVG_ORCHW = `<svg class="diagram reveal" viewBox="0 0 1000 320" role="img"
+  aria-label="Orchestrator worker topology: a central router classifies the request and dispatches to specialist workers, which always return to the router">
+  ${ARROW("ar-ow")}
+  <text class="lbl-s" x="80" y="96">user</text>
+  <path class="link" d="M120 104 L324 104" marker-end="url(#ar-ow)"/>
+
+  <rect class="box-hi" x="330" y="60" width="340" height="86" rx="18"/>
+  <text class="lbl"   x="500" y="98">ORCHESTRATOR</text>
+  <text class="lbl-s" x="500" y="126">classify · dispatch · synthesise</text>
+
+  <rect class="box" x="110" y="212" width="190" height="72" rx="14"/>
+  <text class="lbl"   x="205" y="246">Worker A</text>
+  <text class="lbl-s" x="205" y="270">≤ 5 tools</text>
+
+  <rect class="box" x="405" y="212" width="190" height="72" rx="14"/>
+  <text class="lbl"   x="500" y="246">Worker B</text>
+  <text class="lbl-s" x="500" y="270">≤ 5 tools</text>
+
+  <rect class="box" x="700" y="212" width="190" height="72" rx="14"/>
+  <text class="lbl"   x="795" y="246">Worker C</text>
+  <text class="lbl-s" x="795" y="270">≤ 5 tools</text>
+
+  <path class="link" d="M420 146 L250 206" marker-end="url(#ar-ow)"/>
+  <path class="link" d="M500 146 L500 206" marker-end="url(#ar-ow)"/>
+  <path class="link" d="M580 146 L750 206" marker-end="url(#ar-ow)"/>
+  <path class="link-d" d="M300 232 L400 232"/>
+  <path class="link-d" d="M600 232 L695 232"/>
+  <text class="lbl-s" x="500" y="308">workers never talk to each other — every path returns to the router</text>
+</svg>`;
+
+/* Swarm */
+const SVG_SWARM = `<svg class="diagram reveal" viewBox="0 0 1000 300" role="img"
+  aria-label="Swarm topology: agents hand control directly to a peer, with no central router">
+  ${ARROW("ar-sw")}
+  <rect class="box" x="70" y="130" width="220" height="80" rx="16"/>
+  <text class="lbl"   x="180" y="166">Triage</text>
+  <text class="lbl-s" x="180" y="192">hands off</text>
+
+  <rect class="box-hi" x="390" y="40" width="220" height="80" rx="16"/>
+  <text class="lbl"   x="500" y="76">Billing</text>
+  <text class="lbl-s" x="500" y="102">owns the turn</text>
+
+  <rect class="box" x="710" y="130" width="220" height="80" rx="16"/>
+  <text class="lbl"   x="820" y="166">Technical</text>
+  <text class="lbl-s" x="820" y="192">hands off</text>
+
+  <path class="link" d="M290 152 L384 96" marker-end="url(#ar-sw)"/>
+  <path class="link" d="M610 96 L704 152" marker-end="url(#ar-sw)"/>
+  <path class="link" d="M710 190 L296 190" marker-end="url(#ar-sw)"/>
+  <text class="lbl-s" x="500" y="246">no router · <tspan class="lbl-s">last_active</tspan> routes the next turn straight to whoever holds it</text>
+  <text class="lbl-s" x="500" y="274">one LLM call per turn — and nobody watching the handoffs</text>
+</svg>`;
+
+/* Iterative-refinement RAG loop */
+const SVG_ITERRAG = `<svg class="diagram reveal" viewBox="0 0 1000 250" role="img"
+  aria-label="Iterative refinement: retrieve, check whether the results are good enough, rewrite the query and retrieve again, otherwise answer">
+  ${ARROW("ar-ir")}
+  <rect class="box-hi" x="90" y="70" width="220" height="80" rx="16"/>
+  <text class="lbl"   x="200" y="106">Retrieve</text>
+  <text class="lbl-s" x="200" y="132">any cheap tool</text>
+
+  <rect class="box" x="400" y="70" width="220" height="80" rx="16"/>
+  <text class="lbl"   x="510" y="106">Good enough?</text>
+  <text class="lbl-s" x="510" y="132">model or grader</text>
+
+  <rect class="box-hi" x="710" y="70" width="200" height="80" rx="16"/>
+  <text class="lbl"   x="810" y="106">Answer</text>
+  <text class="lbl-s" x="810" y="132">grounded</text>
+
+  <path class="link" d="M310 110 L394 110" marker-end="url(#ar-ir)"/>
+  <path class="link" d="M620 110 L704 110" marker-end="url(#ar-ir)"/>
+  <text class="lbl-s" x="662" y="94">yes</text>
+  <path class="link" d="M510 150 L510 196 L200 196 L200 156" marker-end="url(#ar-ir)"/>
+  <text class="lbl-s" x="356" y="222">no → rewrite the query and try again (with a retry cap)</text>
+</svg>`;
+
+/* Memory taxonomy */
+const SVG_MEMORY = `<svg class="diagram reveal" viewBox="0 0 1000 230" role="img"
+  aria-label="Four memory stores: working memory in the context window, episodic events, semantic facts, and procedural skills">
+  <rect class="box-hi" x="20" y="40" width="222" height="150" rx="18"/>
+  <text class="lbl"   x="131" y="82">Working</text>
+  <text class="lbl-s" x="131" y="112">the context window</text>
+  <text class="lbl-s" x="131" y="140">bounded · lost at</text>
+  <text class="lbl-s" x="131" y="162">the end of session</text>
+
+  <rect class="box" x="262" y="40" width="222" height="150" rx="18"/>
+  <text class="lbl"   x="373" y="82">Episodic</text>
+  <text class="lbl-s" x="373" y="112">what happened, when</text>
+  <text class="lbl-s" x="373" y="140">full episodes ·</text>
+  <text class="lbl-s" x="373" y="162">vector store</text>
+
+  <rect class="box" x="504" y="40" width="222" height="150" rx="18"/>
+  <text class="lbl"   x="615" y="82">Semantic</text>
+  <text class="lbl-s" x="615" y="112">facts &amp; preferences</text>
+  <text class="lbl-s" x="615" y="140">timeless ·</text>
+  <text class="lbl-s" x="615" y="162">needs curation</text>
+
+  <rect class="box-hi" x="746" y="40" width="222" height="150" rx="18"/>
+  <text class="lbl"   x="857" y="82">Procedural</text>
+  <text class="lbl-s" x="857" y="112">skills &amp; how-to</text>
+  <text class="lbl-s" x="857" y="140">prompts · tools ·</text>
+  <text class="lbl-s" x="857" y="162">CLAUDE.md</text>
+
+  <text class="lbl-t" x="500" y="26">CoALA · Sumers et al., 2024</text>
+  <text class="lbl-s" x="500" y="216">different lifetimes · different write paths · different failure modes</text>
+</svg>`;
+
+/* ---------- SLIDES ---------- */
+const slides = [
+/* 1 */ {seg:"op", kind:"lead", label:"1",
+  title:"Advanced Agents &amp; Multi-Agent Systems",
+  html:`<div class="sub reveal">Agentic Coding &amp; AI Engineering — Lecture 5 of 5</div>
+        <div class="sub reveal" style="margin-top:.2em">Planners · MCP · Agentic RAG · Multi-Agent · Memory</div>
+        <div class="sub reveal" style="margin-top:.5em"><em>If you don't need a second agent, don't add one.</em></div>`},
+
+/* 2 */ {seg:"op", kind:"slide", label:"2", kicker:"Where you are",
+  title:"The 5-lecture arc",
+  html:`<ul class="bullets">
+    <li class="reveal">1️⃣ Intro to LLMs &amp; Prompting</li>
+    <li class="reveal">2️⃣ Evaluation-Driven Development</li>
+    <li class="reveal">3️⃣ RAG &amp; Grounding</li>
+    <li class="reveal">4️⃣ Agents, Workflows &amp; Orchestration</li>
+    <li class="reveal"><strong>5️⃣ Advanced &amp; Multi-Agent Systems</strong> &nbsp;←&nbsp; <em>you are here</em></li>
+  </ul>
+  <div class="sub reveal">Nothing gets thrown away. Your retriever becomes a <strong>tool inside a specialist</strong>;
+    your agent becomes <strong>one worker among several</strong>. Same project, last layer.</div>`},
+
+/* 3 */ {seg:"op", kind:"slide", label:"3", kicker:"The core problem",
+  title:"Your agent hit four walls",
+  html:`<ul class="bullets">
+    <li class="reveal">Last week: <strong>one ReAct loop, three tools</strong> — and it worked</li>
+    <li class="reveal">🧱 <strong>Too slow</strong> — three independent lookups, done one after another</li>
+    <li class="reveal">🧱 <strong>Too many tools</strong> — add a 12th and it starts picking wrong</li>
+    <li class="reveal">🧱 <strong>Retrieval still misses</strong> — one semantic call, one shot, no second try</li>
+    <li class="reveal">🧱 <strong>Total amnesia</strong> — every session starts from zero</li>
+  </ul>
+  <div class="sub reveal">Four walls → four topics tonight. A <em>planning</em> problem, a <em>specialisation</em> problem,
+    a <em>retrieval-strategy</em> problem, and a <em>state</em> problem.</div>`},
+
+/* 4 */ {seg:"op", kind:"slide", label:"4", kicker:"By the end of today",
+  title:"What you'll walk out with",
+  html:`<ul class="bullets">
+    <li class="reveal">Four <strong>planner shapes</strong> — and which one your task actually wants</li>
+    <li class="reveal"><strong>MCP</strong>: what the protocol is, and where its <em>trust boundary</em> sits</li>
+    <li class="reveal"><strong>Agentic RAG</strong> — why <code>grep</code> beats embeddings more often than you think</li>
+    <li class="reveal">Four <strong>multi-agent topologies</strong> — and the test for whether you need any</li>
+    <li class="reveal"><strong>Memory</strong>: working · episodic · semantic · procedural</li>
+    <li class="reveal">✅ Your final project: a multi-agent system in <em>your</em> domain</li>
+  </ul>
+  <div class="sub reveal">Three of tonight's five topics are things you should <strong>not</strong> build until something breaks.</div>`},
+
+/* SECTION 1 */ {seg:"s1", kind:"section", label:"§1", num:"1", kicker:"Segment 1 · ~28 min",
+  title:"Agentic Planners",
+  html:`<div class="sub reveal">Last week we built the loop. Tonight: what shape should the <em>thinking inside it</em> have?</div>`},
+
+/* 5 */ {seg:"s1", kind:"slide", label:"5", kicker:"Recap · 30 seconds",
+  title:"The loop you already built",
+  html: code(`while not done and steps < MAX:
+    thought = llm(context)          # what should I do next?
+    action  = pick_tool(thought)    # which tool, which args
+    obs     = run(action)           # your code runs it
+    context += [thought, action, obs]`) +
+  `<div class="sub reveal">This is <strong>ReAct</strong> — reason <em>while</em> you act. No plan up front.
+    Step <em>n+1</em> is decided only after seeing observation <em>n</em>.</div>`},
+
+/* 6 */ {seg:"s1", kind:"slide", label:"6", kicker:"The honest ledger",
+  title:"ReAct, honestly",
+  html:`<table>
+    <thead><tr><th>✅ Strengths</th><th>❌ Weaknesses</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Debuggable trace</strong> — every step visible</td><td><strong>Strictly sequential</strong> — no parallelism, ever</td></tr>
+      <tr><td><strong>Incremental</strong> — adapts as it learns</td><td><strong>Token-expensive</strong> — the trace grows every step</td></tr>
+      <tr><td><strong>Universal</strong> — solves almost anything</td><td><strong>Can loop forever</strong> — bounded only by context</td></tr>
+    </tbody>
+  </table>
+  <div class="sub reveal">Still the right <strong>default</strong>. You leave it only when you can name
+    the <em>measurement</em> that forced you.</div>`},
+
+/* 7 */ {seg:"s1", kind:"slide", label:"7", kicker:"The reference trace",
+  title:"A ReAct trace, end to end",
+  html: code(`Q: "What is the population of the capital of France?"
+
+Thought: I need the capital of France first
+Action:  get_capital("France")
+Obs:     "Paris"
+Thought: Now I need the population of Paris
+Action:  get_population("Paris")
+Obs:     2102650
+Answer:  about 2.1 million`) +
+  `<div class="sub reveal">Two hops, and the second query <strong>cannot be written</strong> until the first returns.
+    That's a genuine sequential dependency — exactly where ReAct's shape is right.</div>`},
+
+/* 8 */ {seg:"s1", kind:"slide", label:"8", kicker:"In code",
+  title:"ReAct in LangChain",
+  html: code(`agent = create_react_agent(llm, tools, prompt)
+
+executor = AgentExecutor(
+    agent=agent, tools=tools,
+    max_iterations=10,              # the safety net, not optional
+    return_intermediate_steps=True, # you will need the trace
+)`) +
+  `<div class="sub reveal">🔑 The model picks tools from <strong>names + docstrings</strong>. Nothing else.
+    If it picks wrong, fix the <em>description</em> — not the prompt, not the model.</div>`},
+
+/* 9 */ {seg:"s1", kind:"slide", label:"9", kicker:"Resolving a common confusion",
+  title:"Classic ReAct vs. modern function calling",
+  html:`<table>
+    <thead><tr><th></th><th>Classic ReAct (2022)</th><th>Modern function calling</th></tr></thead>
+    <tbody>
+      <tr><td>Thought</td><td>Explicit free text</td><td><strong>Implicit</strong> — trained in</td></tr>
+      <tr><td>Transport</td><td>Prose you must parse</td><td><strong>Structured JSON</strong></td></tr>
+      <tr><td>Failure</td><td>Parsing breaks · prompt hacks</td><td>Schema validation</td></tr>
+      <tr><td>Cost</td><td>Two token streams per step</td><td>Fewer tokens</td></tr>
+    </tbody>
+  </table>
+  <div class="sub reveal">Modern APIs have <strong>baked ReAct into the model</strong>. You still design the loop —
+    you just no longer write a parser. <em>ReAct wasn't replaced; it was absorbed.</em></div>`},
+
+/* 10 */ {seg:"s1", kind:"slide", label:"10", kicker:"Planner 2 · 2025",
+  title:"Plan-and-Act: plan, then <em>re</em>plan",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Planner LLM</strong> (strong, expensive) writes the steps up front</li>
+    <li class="reveal"><strong>Executor LLM</strong> (cheap, fast) does one step</li>
+    <li class="reveal"><strong>Replanner</strong> reads the observation and <em>revises what's left</em></li>
+    <li class="reveal">vs. static Plan-and-Execute: the plan is allowed to <strong>change</strong></li>
+    <li class="reveal">🔑 ReAct with the reasoning <em>hoisted out</em> into a stronger, separate model</li>
+  </ul>
+  <div class="sub reveal">Pay the expensive model only for planning. Run the mechanical steps on something cheap.</div>`},
+
+/* 11 */ {seg:"s1", kind:"slide", label:"11", kicker:"The trade",
+  title:"Plan-and-Act: what it costs you",
+  html:`<div class="split">
+    <div><h3 class="reveal">✅ Buys</h3>
+      <ul class="bullets">
+        <li class="reveal"><strong>Adapts</strong> to surprises — the plan is live</li>
+        <li class="reveal"><strong>Auditable plan up front</strong> — a human can approve before anything fires</li>
+        <li class="reveal"><strong>Cheap executor</strong> — big model only where it matters</li>
+      </ul></div>
+    <div><h3 class="reveal">❌ Costs</h3>
+      <ul class="bullets">
+        <li class="reveal">An <strong>extra LLM call per replan</strong></li>
+        <li class="reveal"><strong>Planner quality is everything</strong> — a bad plan stays bad</li>
+        <li class="reveal">More moving parts than ReAct</li>
+      </ul></div>
+  </div>
+  <div class="sub reveal">Use it when the task has <strong>phases you could name in advance</strong> —
+    and whenever a human must approve before the agent spends, sends or writes.</div>`},
+
+/* 12 */ {seg:"s1", kind:"slide", label:"12", kicker:"In LangGraph",
+  title:"Three nodes, one conditional edge",
+  html: SVG_PLANACT + `<div class="sub reveal">Why a framework and not a <code>while</code> loop?
+    <strong>State persistence · checkpointing</strong> (approve the plan today, resume tomorrow) <strong>· tracing for free</strong></div>`},
+
+/* 13 */ {seg:"s1", kind:"slide", label:"13", kicker:"Planner 3",
+  title:"LLMCompiler: a <em>DAG</em>, not a list",
+  html: SVG_DAG + `<div class="sub reveal">A plan written as <em>text</em> is a list — and a list is implicitly sequential.
+    <strong>The format of the plan silently decides your latency.</strong></div>`},
+
+/* 14 */ {seg:"s1", kind:"slide", label:"14", kicker:"Anatomy",
+  title:"Three components",
+  html:`<div class="steps" style="grid-template-columns:repeat(3,1fr);max-width:1100px">
+    <div class="step reveal"><div class="n">1</div><div class="t">Planner</div>
+      <div class="d">Streams a DAG: id · tool · args · deps. Emits <code>$1</code>-style placeholders for outputs that don't exist yet.</div></div>
+    <div class="step reveal"><div class="n">2</div><div class="t">Task fetching unit</div>
+      <div class="d">The scheduler. Dispatches ready tasks on a thread pool and substitutes resolved dependencies.</div></div>
+    <div class="step reveal"><div class="n">3</div><div class="t">Joiner</div>
+      <div class="d">Synthesises the final answer — or sends the graph back to the planner to be extended.</div></div>
+  </div>
+  <div class="sub reveal">A compiler front-end, a runtime scheduler, and a return statement.
+    The placeholder is the clever bit: it lets the plan be written <em>before</em> any observation exists.</div>`},
+
+/* 15 */ {seg:"s1", kind:"slide", label:"15", kicker:"The numbers — and the asterisk",
+  title:"What it buys you",
+  html:`<ul class="bullets">
+    <li class="reveal">Reported vs. ReAct: <strong>~3.7× faster</strong> · <strong>~6.7× cheaper</strong></li>
+    <li class="reveal">🔑 The win is <strong>entirely</strong> from parallelism — a strictly sequential task gains <em>nothing</em></li>
+    <li class="reveal">Second saving: no growing trace re-sent on every step</li>
+    <li class="reveal">Use when: many <strong>independent</strong> subtasks · latency is a product requirement</li>
+  </ul>
+  <div class="sub reveal"><strong>LLMCompiler is a latency optimisation.</strong>
+    If latency isn't a stated requirement, you don't need it yet.</div>`},
+
+/* 16 */ {seg:"s1", kind:"slide", label:"16", kicker:"Planner 4",
+  title:"CodeAct: the action <em>is</em> code",
+  html:`<ul class="bullets">
+    <li class="reveal">The agent emits <strong>executable Python</strong>, not a JSON tool call</li>
+    <li class="reveal">One snippet = <strong>loops · conditionals · variables · multi-step logic</strong></li>
+    <li class="reveal"><code>read CSV → filter → group → mean → plot → save</code> = <strong>one</strong> action, not five</li>
+    <li class="reveal">Models are <em>very</em> good at writing Python — play to that</li>
+  </ul>
+  <div class="sub reveal">A JSON tool call can say "call this function with these args" and nothing more.
+    Code can say the rest. You've watched Claude Code do this all semester.</div>`},
+
+/* 17 */ {seg:"s1", kind:"slide", label:"17", kicker:"Non-negotiable",
+  title:"CodeAct: sandbox, or don't ship",
+  html:`<ul class="bullets">
+    <li class="reveal">🚨 <strong>Always sandbox.</strong> Docker · e2b · a hosted code-interpreter</li>
+    <li class="reveal">Naive version — write <code>.py</code>, <code>subprocess.run(...)</code> — fine on your laptop, <strong>never</strong> near real data</li>
+    <li class="reveal">The threat isn't a hallucinating model. It's <strong>text an attacker wrote into a document your agent retrieved</strong></li>
+    <li class="reveal">The bar: no network · no credentials mounted · wall-clock timeout · a filesystem you're happy to lose</li>
+    <li class="reveal">🔑 An LLM with raw shell access is <strong>arbitrary code execution with good manners</strong></li>
+  </ul>`},
+
+/* 18 */ {seg:"s1", kind:"slide", label:"18", kicker:"Photograph this one",
+  title:"Which planner?",
+  html:`<table>
+    <thead><tr><th>Planner</th><th>Shape of work</th><th>Pick it when</th></tr></thead>
+    <tbody>
+      <tr><td><strong>ReAct</strong> ⭐</td><td>Explore, adapt</td><td>Scope unknown up front — <strong>the default</strong></td></tr>
+      <tr><td><strong>Plan-and-Act</strong></td><td>Named phases</td><td>Decomposable in advance · want human approval</td></tr>
+      <tr><td><strong>LLMCompiler</strong></td><td>Independent fan-out</td><td>Subtasks don't depend on each other · latency matters</td></tr>
+      <tr><td><strong>CodeAct</strong></td><td>Computation</td><td>Loops, data, math, scripting</td></tr>
+    </tbody>
+  </table>
+  <div class="sub reveal">The <em>shape of the work</em> selects the planner — not fashion, not the framework's default.
+    <strong>Start at ReAct. Move only on a measurement.</strong></div>`},
+
+/* 19 */ {seg:"s1", kind:"slide", label:"19", kicker:"Reality check",
+  title:"In practice, everything is a hybrid",
+  html:`<ul class="bullets">
+    <li class="reveal">Real systems <strong>merge</strong> these — they don't choose one</li>
+    <li class="reveal">A planning <em>phase</em> that hands back to a ReAct loop</li>
+    <li class="reveal">Or the model plans <strong>implicitly</strong> inside the loop — adapting, parallelising tool calls</li>
+    <li class="reveal">🔑 These are <strong>shapes of thought</strong>, not products you install</li>
+  </ul>
+  <div class="sub reveal">Claude Code writes a plan, executes adaptively, fires parallel searches, and shells out to Python.
+    All four shapes, one session. The taxonomy's value is <strong>diagnostic</strong>:
+    when it's too slow or too expensive, it tells you which shape you're missing.</div>`},
+
+/* SECTION 2 */ {seg:"s2", kind:"section", label:"§2", num:"2", kicker:"Segment 2 · ~15 min",
+  title:"MCP — the Model Context Protocol",
+  html:`<div class="sub reveal">Every planner above assumed the tools were already connected.
+    <em>That assumption is a full-time job.</em></div>`},
+
+/* 20 */ {seg:"s2", kind:"slide", label:"20", kicker:"The combinatorics",
+  title:"Why MCP exists: N×M → N+M",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Before:</strong> N models × M services = <strong>N×M</strong> bespoke integrations</li>
+    <li class="reveal"><strong>After:</strong> one protocol, one server per service = <strong>N+M</strong></li>
+    <li class="reveal">5 services × 3 hosts = <em>15 adapters</em> → becomes 5 servers + 3 clients</li>
+    <li class="reveal">🔑 It's a <strong>standard, not a capability</strong> — nothing here is new, it's <em>uniform</em></li>
+  </ul>
+  <div class="sub reveal">A boring, valuable integration standard. Boring integration standards are
+    how ecosystems actually happen.</div>`},
+
+/* 21 */ {seg:"s2", kind:"slide", label:"21", kicker:"Architecture",
+  title:"Host · Client · Server",
+  html: SVG_MCP + `<div class="sub reveal"><strong>stdio</strong> = a subprocess on your machine: fast, no auth story, dies with the host.
+    <strong>HTTP</strong> = a service elsewhere: OAuth, a network trust model, and all the interesting security questions.</div>`},
+
+/* 22 */ {seg:"s2", kind:"slide", label:"22", kicker:"Ask: who's driving?",
+  title:"What a <em>server</em> exposes",
+  html:`<table>
+    <thead><tr><th>Primitive</th><th>Controlled by</th><th>Example (a Git server)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Tools</strong></td><td>the <strong>model</strong></td><td><code>create_branch(...)</code></td></tr>
+      <tr><td><strong>Resources</strong></td><td>the <strong>app</strong> — read-only, by URI</td><td><code>repo://HEAD/diff</code></td></tr>
+      <tr><td><strong>Prompts</strong></td><td>the <strong>user</strong> — templates</td><td><code>/review-pr</code></td></tr>
+    </tbody>
+  </table>
+  <div class="sub reveal">Same server, three different decision-makers.
+    Resources are <em>attachments</em>, not actions — and a prompt is exactly what a slash command is.</div>`},
+
+/* 23 */ {seg:"s2", kind:"slide", label:"23", kicker:"The arrow points both ways",
+  title:"What a <em>client</em> exposes",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Sampling</strong> — the <em>server</em> asks the <em>host</em> to run an LLM completion
+      <ul><li>no API key of its own · the host pays and applies its policies</li></ul></li>
+    <li class="reveal"><strong>Roots</strong> — the host advertises which filesystem paths are in bounds
+      <ul><li>a security primitive, not a convenience</li></ul></li>
+    <li class="reveal"><strong>Elicitation</strong> — the server asks the <em>user</em> for missing input
+      <ul><li>structured "I need your project key" instead of failing or guessing</li></ul></li>
+  </ul>
+  <div class="sub reveal">🔑 <strong>Capability lives in the server. Authority lives in the host.</strong></div>`},
+
+/* 24 */ {seg:"s2", kind:"slide", label:"24", kicker:"Do not cut this slide",
+  title:"Every server is untrusted code",
+  html:`<ul class="bullets">
+    <li class="reveal">🚨 <strong>Prompt injection</strong> — text from a tool's <em>output</em> hijacks the agent
+      <ul><li>the context is one undifferentiated stream: any doc, page, ticket or email your agent reads is an <strong>instruction channel</strong></li></ul></li>
+    <li class="reveal">🚨 <strong>Confused deputy</strong> — the server holds <em>your</em> token, so anything that convinces it acts <strong>as you</strong></li>
+    <li class="reveal">🛡 <strong>Explicit consent</strong> — a human approves anything that writes, spends or sends</li>
+    <li class="reveal">🛡 <strong>Scoped roots + OAuth</strong> — least privilege, always</li>
+  </ul>
+  <div class="sub reveal">An MCP server is <strong>a dependency with a network connection and your credentials</strong>.</div>`},
+
+/* 25 */ {seg:"s2", kind:"slide", label:"25", kicker:"Permission to not use it",
+  title:"MCP — or just a function?",
+  html:`<table>
+    <thead><tr><th>Use direct tools</th><th>Use MCP</th></tr></thead>
+    <tbody>
+      <tr><td>Single agent</td><td>Many agents / hosts share the tool</td></tr>
+      <tr><td>Internal, same repo</td><td>Third-party or cross-team</td></tr>
+      <tr><td>Latency-sensitive</td><td>Latency-tolerant</td></tr>
+      <tr><td>You own both sides</td><td>Someone else owns the other side</td></tr>
+    </tbody>
+  </table>
+  <div class="sub reveal">MCP earns its overhead when the tool crosses an <strong>ownership line</strong>.
+    For your final project a Python function is almost certainly right — and if a second consumer appears,
+    put a server <em>in front of the same function</em>.</div>`},
+
+/* BREAK */ {seg:"brk", kind:"section", label:"26", num:"☕",
+  title:"Break",
+  html:`<div class="sub reveal">~5 min · Next: <strong>Agentic RAG · Multi-Agent · Memory</strong> — and the whole course</div>
+        <div class="sub reveal" style="margin-top:.3em">Open now: your <em>assignment-4 agent</em> and its eval report. You'll need both.</div>`},
+
+/* SECTION 3 */ {seg:"s3", kind:"section", label:"§3", num:"3", kicker:"Segment 3 · ~20 min",
+  title:"Agentic RAG",
+  html:`<div class="sub reveal">Three weeks ago we said retrieval is the bottleneck.
+    It usually was — but the bottleneck was the <em>strategy</em>, not the index.</div>`},
+
+/* 27 */ {seg:"s3", kind:"slide", label:"27", kicker:"Three different failures",
+  title:"Where naive RAG breaks",
+  html:`<ul class="bullets">
+    <li class="reveal">🧨 <strong>Multi-hop</strong> — <em>"population of the capital of France?"</em> needs <strong>two</strong> retrievals; naive RAG fires <strong>once</strong></li>
+    <li class="reveal">🧨 <strong>Vague query</strong> — a bad question in, noisy chunks out. No rewrite, no retry</li>
+    <li class="reveal">🧨 <strong>Wrong tool</strong> — general embeddings on a codebase return <em>thematic neighbours</em>:
+      you asked for <code>validate_token</code>, you got <code>check_credentials</code></li>
+    <li class="reveal">🔑 One shot · one strategy · <strong>no feedback</strong></li>
+  </ul>`},
+
+/* 28 */ {seg:"s3", kind:"slide", label:"28", kicker:"The reframe",
+  title:"The agentic insight",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Many cheap, simple retrievals</strong> usually beat <strong>one heavy semantic call</strong></li>
+    <li class="reveal">🔑 <strong>The intelligence lives in the loop, not in the index</strong></li>
+    <li class="reveal">Which is why Claude Code and Cursor ship with <code>rg</code>, <code>find</code>, <code>read_file</code> — and <strong>no vector database</strong></li>
+    <li class="reveal">A loop lets a <em>simple</em> tool be wrong cheaply and recover. One shot must be right first time</li>
+  </ul>
+  <div class="sub reveal">Usually better to spend your budget on a <strong>retry-and-refine loop around a dumb retriever</strong>
+    than on a smarter retriever with no loop.</div>`},
+
+/* 29 */ {seg:"s3", kind:"slide", label:"29", kicker:"The reference table",
+  title:"Retrieval is a spectrum",
+  html:`<table>
+    <thead><tr><th>Method</th><th>Speed</th><th>Precision</th><th>Recall</th><th>Setup</th><th>Best for</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Exact</strong> (<code>rg</code>)</td><td>⚡ fastest</td><td>highest</td><td>low <em>per query</em></td><td>none</td><td>code · IDs · error strings</td></tr>
+      <tr><td><strong>Lexical</strong> (BM25)</td><td>fast</td><td>high</td><td>medium</td><td>inverted index</td><td>logs · docs · tickets</td></tr>
+      <tr><td><strong>Semantic</strong></td><td>slower</td><td>medium</td><td><strong>high</strong></td><td>embed + store</td><td>concepts · paraphrase</td></tr>
+      <tr><td><strong>Structured</strong> (SQL)</td><td>varies</td><td>highest</td><td>n/a</td><td>schema knowledge</td><td>aggregations · joins · time</td></tr>
+    </tbody>
+  </table>
+  <div class="sub reveal">"Low recall <em>per query</em>" is the nuance: one grep misses a lot — <strong>ten greps in a loop don't</strong>.
+    And the forgotten quadrant is SQL: <em>"how many orders shipped in Q3"</em> is a <code>SELECT</code>.</div>`},
+
+/* 30 */ {seg:"s3", kind:"slide", label:"30", kicker:"The reflex to unlearn",
+  title:"The default mistake",
+  html:`<ul class="bullets">
+    <li class="reveal">❌ Reaching for <strong>embeddings + a vector DB</strong> when <code>grep</code> would be
+      <strong>faster</strong>, <strong>cheaper</strong> and <strong>more precise</strong></li>
+    <li class="reveal">The bill: a pipeline, a store to run, a re-indexing story, chunk params, a threshold nobody can justify</li>
+    <li class="reveal">✅ <strong>Start simple. Escalate only when the simple thing measurably fails.</strong></li>
+  </ul>
+  <div class="sub reveal">Same instinct as <em>workflow before agent</em> (last week) and <em>one agent before five</em> (in 20 minutes).
+    <strong>It's the same rule three times.</strong></div>`},
+
+/* 31 */ {seg:"s3", kind:"slide", label:"31", kicker:"Highest-leverage 10 minutes tonight",
+  title:"Teach the tool to iterate — in its docstring",
+  html: code(`def grep(pattern: str, path: str = ".") -> str:
+    """Search files for a regex. Returns matching lines as file:line.
+
+    Returns "No matches" if nothing is found - that is a HINT, not a
+    failure: try a broader pattern, a different spelling, or search
+    for a caller instead of a definition. Prefer several narrow
+    searches over one broad one.
+    """`) +
+  `<div class="sub reveal">🔑 The docstring turns an <strong>empty result</strong> into the <strong>next step</strong>.
+    Most people describe the happy path; the leverage is in describing the <em>failure</em> path.</div>`},
+
+/* 32 */ {seg:"s3", kind:"slide", label:"32", kicker:"Run this live if you can",
+  title:"Head to head",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Q:</strong> <em>"Where does the auth token actually get validated?"</em></li>
+    <li class="reveal"><strong>Semantic:</strong> 5 chunks about auth, login, sessions → plausible, vague → <strong>the model guesses</strong></li>
+    <li class="reveal"><strong>Iterative grep:</strong> <code>rg "validate.*token"</code> → 2 hits → read one →
+      <code>rg "validate_token\\("</code> → <strong>every call site</strong></li>
+    <li class="reveal">🔑 Precision + a loop beats similarity + one shot</li>
+  </ul>
+  <div class="sub reveal">The semantic result is <strong>dangerous</strong>, not merely unhelpful: confident, on-topic context
+    containing no answer → a confident wrong answer. <em>That's a faithfulness failure arriving through the retriever.</em></div>`},
+
+/* 33 */ {seg:"s3", kind:"slide", label:"33", kicker:"Pattern 1 — the default",
+  title:"Iterative refinement",
+  html: SVG_ITERRAG + `<div class="sub reveal">The smallest possible change to your assignment-3 pipeline: same retriever,
+    plus a self-check and a rewrite. Same shape as <strong>evaluator–optimizer</strong> — pointed at retrieval.
+    <strong>Cap the retries</strong>, and treat a repeated query as a stop condition.</div>`},
+
+/* 34 */ {seg:"s3", kind:"slide", label:"34", kicker:"Pattern 2",
+  title:"Routing",
+  html: code(`query -> classify -> grep      (exact / code / IDs)
+                     -> BM25      (keyword-heavy)
+                     -> semantic  (concepts, paraphrase)
+                     -> SQL       (counts, joins, time ranges)`) +
+  `<div class="sub reveal">Slide 29's table turned into runtime behaviour. A support bot gets
+    <em>"my invoice total"</em> (SQL), <em>"error CODE_4021"</em> (exact) and <em>"why so expensive?"</em> (semantic) —
+    any single retriever is wrong two-thirds of the time.
+    ⚠️ <strong>Log the route decision</strong>: a misroute is invisible in the final answer.</div>`},
+
+/* 35 */ {seg:"s3", kind:"slide", label:"35", kicker:"Pattern 3",
+  title:"Query decomposition",
+  html:`<ul class="bullets">
+    <li class="reveal">Break a complex question into <strong>independent</strong> sub-questions</li>
+    <li class="reveal">Retrieve each <strong>in parallel</strong> → merge → answer</li>
+    <li class="reveal"><em>"Compare our 2024 and 2025 refund policies"</em> → two retrievals, one synthesis</li>
+    <li class="reveal">⚠️ Only when sub-answers are <strong>independent</strong> — otherwise it's multi-hop, use the loop</li>
+  </ul>
+  <div class="sub reveal">🧪 The test: <strong>can I write all the sub-queries right now, before running anything?</strong>
+    Yes → decompose. No → it's the France trace from slide 7, and you need iteration.</div>`},
+
+/* 36 */ {seg:"s3", kind:"slide", label:"36", kicker:"Choosing",
+  title:"Three patterns, one rule",
+  html:`<table>
+    <thead><tr><th>Pattern</th><th>Use when</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Iterative</strong> ⭐</td><td>First hit often misses</td><td>+1 call per retry</td></tr>
+      <tr><td><strong>Routing</strong></td><td>Many query <em>types</em></td><td>+1 classify call</td></tr>
+      <tr><td><strong>Decomposition</strong></td><td>Independent sub-questions</td><td>+N parallel retrievals</td></tr>
+    </tbody>
+  </table>
+  <div class="sub reveal">They <strong>compose</strong>: route → decompose → refine each branch.
+    Sort your assignment-3 failures into "needed a second try" / "wrong retriever" / "needed two lookups" —
+    <strong>the histogram tells you which pattern to build.</strong></div>`},
+
+/* SECTION 4 */ {seg:"s4", kind:"section", label:"§4", num:"4", kicker:"Segment 4 · ~22 min",
+  title:"Multi-Agent Systems",
+  html:`<div class="sub reveal">The topic everyone wanted — and the one I'm going to spend three minutes
+    <em>talking you out of</em>.</div>`},
+
+/* 37 */ {seg:"s4", kind:"slide", label:"37", kicker:"First, don't",
+  title:"Only if there is an absolute need",
+  html:`<ul class="bullets">
+    <li class="reveal">Multi-agent multiplies: <strong>cost × latency × failure modes × debugging pain</strong></li>
+    <li class="reveal">3 agents ≈ 3× the calls · latency becomes the <em>sum</em> of the chain, not the max</li>
+    <li class="reveal">"Why did it answer that?" now needs <strong>three traces and a handoff log</strong></li>
+    <li class="reveal">Add complexity only when a single ReAct loop hits a <strong>measurable</strong> wall</li>
+    <li class="reveal">🔑 <em>"We used five agents"</em> is not an achievement. It's a <strong>cost</strong>.</li>
+  </ul>
+  <div class="sub reveal">Assignment 5 requires three agents because it's a <em>teaching</em> exercise.
+    "It wasn't justified, and here's the data" is a <strong>full-credit</strong> answer.</div>`},
+
+/* 38 */ {seg:"s4", kind:"slide", label:"38", kicker:"Name your wall, or don't split",
+  title:"The four walls that justify it",
+  html:`<div class="steps" style="grid-template-columns:repeat(4,1fr)">
+    <div class="step reveal"><div class="n">🧱</div><div class="t">Tool overload</div>
+      <div class="d">Past ~10–15 <em>similar</em> tools, selection accuracy falls. Similarity matters more than count.</div></div>
+    <div class="step reveal"><div class="n">🧱</div><div class="t">Context bloat</div>
+      <div class="d">Every domain's data in one context: expensive — and reasoning measurably degrades.</div></div>
+    <div class="step reveal"><div class="n">🧱</div><div class="t">Serial bottleneck</div>
+      <div class="d">Parallelisable subtasks running one at a time. Check LLMCompiler first — it's cheaper.</div></div>
+    <div class="step reveal"><div class="n">🧱</div><div class="t">Team boundaries</div>
+      <div class="d">Teams shipping independently. The agent boundary <em>is</em> an API boundary.</div></div>
+  </div>
+  <div class="sub reveal">The fourth is organisational, not technical — which makes it the most durable.</div>`},
+
+/* 39 */ {seg:"s4", kind:"slide", label:"39", kicker:"Topology 1",
+  title:"Network — any-to-any",
+  html:`<ul class="bullets">
+    <li class="reveal">Every agent can call every other agent. <strong>No structure.</strong></li>
+    <li class="reveal">For <strong>exploratory</strong> work: research · debate · critique</li>
+    <li class="reveal">The value comes from agents <em>disagreeing</em> and converging — disagreement is a form of search</li>
+    <li class="reveal">❌ Many LLM calls per turn · no single place to observe · unpredictable above <strong>~5 peers</strong></li>
+  </ul>
+  <div class="sub reveal">Excellent for offline exploration and red-teaming.
+    Essentially never right for a user-facing request with a latency budget.</div>`},
+
+/* 40 */ {seg:"s4", kind:"slide", label:"40", kicker:"Topology 2 · the default",
+  title:"Orchestrator–Worker",
+  html: SVG_ORCHW + `<div class="sub reveal">✅ Focused routing prompt · simple workers · <strong>one trace to read</strong> ·
+    adding a tenth worker changes nothing else. <em>This is what subagents are.</em></div>`},
+
+/* 41 */ {seg:"s4", kind:"slide", label:"41", kicker:"In the order you'll meet them",
+  title:"The three taxes",
+  html:`<ul class="bullets">
+    <li class="reveal">💸 <strong>Routing latency tax</strong> — <em>every</em> turn pays a router call, even "hi"
+      <ul><li>fix: a cheap fast-path or a small routing model — not cleverness</li></ul></li>
+    <li class="reveal">🪱 <strong>Supervisor drift</strong> — the router accumulates logic and becomes the monolith you split up
+      <ul><li>alarm: a router prompt that keeps growing</li></ul></li>
+    <li class="reveal">🧟 <strong>Prompt rot</strong> — the router's description of worker #3 stops matching what worker #3 does
+      <ul><li>fix: per-worker evals + <strong>routing accuracy</strong> as a tracked metric</li></ul></li>
+  </ul>
+  <div class="sub reveal">The router is the single point of failure <em>and</em> the single point of debugging.</div>`},
+
+/* 42 */ {seg:"s4", kind:"slide", label:"42", kicker:"Topology 3",
+  title:"Hierarchical — a tree of teams",
+  html:`<ul class="bullets">
+    <li class="reveal">Orchestrators <strong>of orchestrators</strong>: top router → team routers → workers</li>
+    <li class="reveal">For <strong>50+ agents</strong> across domains, or when one router's prompt can't describe them all</li>
+    <li class="reveal">It usually mirrors the org chart — Conway's law, in agent form</li>
+    <li class="reveal">⚠️ <strong>Avoid below ~10 agents</strong> — every layer adds a full LLM call to the round trip</li>
+  </ul>
+  <div class="sub reveal">Here so you recognise it in a design doc. <em>Nobody in this room needs it for the final project.</em></div>`},
+
+/* 43 */ {seg:"s4", kind:"slide", label:"43", kicker:"Topology 4",
+  title:"Swarm — peer handoffs",
+  html: SVG_SWARM + `<div class="sub reveal">✅ One call per turn · context stays local · specialists keep specialising.
+    ❌ No central observer · <strong>coupling grows quadratically</strong> (N agents need handoff tools for N−1 peers)
+    — and then you're back at wall #1.</div>`},
+
+/* 44 */ {seg:"s4", kind:"slide", label:"44", kicker:"The mechanism",
+  title:"The handoff, precisely",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Destination</strong> — which agent takes over</li>
+    <li class="reveal"><strong>Payload</strong> — what state travels <em>and what deliberately doesn't</em>
+      <ul><li>whole history → re-bloats every context, defeating the split</li>
+          <li>too little → the next agent re-asks what the user already answered</li>
+          <li>usually right: a structured summary + the fields the next agent needs — <strong>a schema you design</strong></li></ul></li>
+    <li class="reveal"><strong>Ownership</strong> — who owns the conversation <em>now</em>. Explicit and single-valued</li>
+  </ul>
+  <div class="sub reveal">⚠️ The classic bug: both agents assume the other is handling it.
+    To the user, that presents as <strong>silence</strong>.</div>`},
+
+/* 45 */ {seg:"s4", kind:"slide", label:"45", kicker:"Photograph this one",
+  title:"Choosing a topology",
+  html:`<table>
+    <thead><tr><th>Topology</th><th>Use when</th><th>Scale</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Orchestrator–Worker</strong> ⭐</td><td>Almost always. Start here.</td><td>2–20</td></tr>
+      <tr><td><strong>Swarm</strong></td><td>Latency matters · domains are clean</td><td>2–8</td></tr>
+      <tr><td><strong>Network</strong></td><td>Exploration · debate · critique</td><td>≤ 5</td></tr>
+      <tr><td><strong>Hierarchical</strong></td><td>Many domains, many teams</td><td>50+</td></tr>
+    </tbody>
+  </table>
+  <div class="sub reveal">And before all of them: <strong>one agent, better tools</strong>.
+    If you can't name the wall, the answer is orchestrator–worker plus an honest report.</div>`},
+
+/* 46 */ {seg:"s4", kind:"slide", label:"46", kicker:"The question from the end of lecture 4",
+  title:"Which agent was wrong?",
+  html:`<ul class="bullets">
+    <li class="reveal">The user sees <em>one</em> wrong answer. The cause could be a <strong>misroute</strong>,
+      a worker's bad <strong>tool call</strong>, a lossy <strong>handoff</strong>, or a <strong>synthesis</strong> that dropped it</li>
+    <li class="reveal"><strong>Trace whole trajectories</strong>, not single calls</li>
+    <li class="reveal">Log: agent · tool · input · output · duration · cost · <strong>route/handoff decision</strong></li>
+    <li class="reveal">Define a <strong>"unit of work"</strong> object so a trace reads as a table, not a wall of JSON</li>
+    <li class="reveal">🔑 If you can't read the trace, you can't fix the system</li>
+  </ul>
+  <div class="sub reveal">Build this <strong>before</strong> the third agent. Retrofitting tracing onto a working
+    multi-agent system is misery — and it's a requirement of assignment 5.</div>`},
+
+/* 47 */ {seg:"s4", kind:"slide", label:"47", kicker:"Engineering judgement",
+  title:"Scoping agents &amp; choosing models",
+  html:`<ul class="bullets">
+    <li class="reveal">Agent scope = <strong>inputs · outputs · tools</strong>. Drawing the boundary is a <em>domain</em> judgement, not a formula</li>
+    <li class="reveal">🧪 Heuristic: a good boundary is one you can describe <strong>in a sentence without the word "and"</strong></li>
+    <li class="reveal">Model per agent: choose on <strong>latency vs. cost vs. quality</strong> — with a dataset and KPIs, not vibes</li>
+    <li class="reveal">Cheap model for routing and mechanical work; strong model where reasoning decides the answer</li>
+  </ul>
+  <div class="sub reveal">🔑 <strong>Per-agent evals.</strong> "The system passes 70%" is unactionable.
+    "Researcher 95%, critic 55%" tells you exactly what to fix tomorrow.</div>`},
+
+/* SECTION 5 */ {seg:"s5", kind:"section", label:"§5", num:"5", kicker:"Segment 5 · ~14 min",
+  title:"Agent Memory",
+  html:`<div class="sub reveal">Every agent we've built in five weeks is an amnesiac.
+    It's very good, and every morning it wakes up knowing nothing about yesterday.</div>`},
+
+/* 48 */ {seg:"s5", kind:"slide", label:"48", kicker:"The problem",
+  title:"Stateless by default",
+  html:`<ul class="bullets">
+    <li class="reveal">A vanilla agent starts every session knowing <strong>nothing</strong> — not your codebase, not your preferences, not what it tried yesterday</li>
+    <li class="reveal">→ re-explores the same repo · re-asks the same questions · repeats the same mistake</li>
+    <li class="reveal"><strong>Stateful</strong> agents skip known context, personalise, and <em>improve over time</em></li>
+    <li class="reveal">🔑 You've been patching this by hand already — <code>CLAUDE.md</code> exists <em>because the agent forgets</em></li>
+  </ul>
+  <div class="sub reveal">Memory isn't one feature. It's <strong>four stores</strong> with different lifetimes —
+    and conflating them is why homegrown memory systems turn into junk.</div>`},
+
+/* 49 */ {seg:"s5", kind:"slide", label:"49", kicker:"The map",
+  title:"The taxonomy",
+  html: SVG_MEMORY + `<div class="sub reveal">Human analogy: what you're holding right now · remembering Tuesday's meeting ·
+    knowing Paris is the capital · riding a bicycle.
+    <strong>The common mistake is building one vector store and calling it "memory".</strong></div>`},
+
+/* 50 */ {seg:"s5", kind:"slide", label:"50", kicker:"Store 1 · the bottleneck",
+  title:"Working memory (in-context)",
+  html:`<ul class="bullets">
+    <li class="reveal">System prompt + tool schemas + recent turns + retrieved chunks</li>
+    <li class="reveal"><strong>Bounded</strong> · <strong>lost between sessions</strong> — it's RAM, not disk</li>
+    <li class="reveal">🔑 Every other memory type <strong>competes for these tokens</strong>. "Add memory" = "spend context"</li>
+    <li class="reveal">When it fills — <strong>compaction</strong>:
+      <ul><li>① summarise <strong>tool outputs</strong> first — bulky, and mostly spent once acted on</li>
+          <li>② then summarise <strong>older conversation turns</strong> — they carry intent, so they go last</li></ul></li>
+  </ul>
+  <div class="sub reveal">Compaction is <em>lossy</em>. That's why long agent sessions degrade rather than fail cleanly.</div>`},
+
+/* 51 */ {seg:"s5", kind:"slide", label:"51", kicker:"Store 2",
+  title:"Episodic — events, timestamped",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>What happened, when, with whom</strong> — full episodes, not distilled facts</li>
+    <li class="reveal">raw → cleaned → chunked → embedded; retrieved by similarity
+      <ul><li>it's assignment 3's machinery, pointed at the agent's own past</li></ul></li>
+    <li class="reveal">✅ <em>"How did we solve this last time?"</em> — including what was tried and failed</li>
+    <li class="reveal">❌ Breaks on <strong>time</strong>: <em>"what did I ask last Tuesday?"</em> —
+      embeddings capture <strong>meaning, not chronology</strong></li>
+  </ul>
+  <div class="sub reveal">The fix is metadata filters over timestamps — which is the
+    <strong>structured</strong> row of slide 29, arriving exactly where you'd expect.</div>`},
+
+/* 52 */ {seg:"s5", kind:"slide", label:"52", kicker:"Store 3",
+  title:"Semantic — facts, timeless",
+  html:`<ul class="bullets">
+    <li class="reveal">Curated <strong>facts and preferences</strong>, decoupled from when they were learned</li>
+    <li class="reveal"><em>"Prefers TypeScript"</em> · <em>"Team ships on Thursdays"</em> · <em>"Never email customers directly"</em></li>
+    <li class="reveal">Something must decide what gets <strong>promoted</strong> from episode → fact: an LLM (evaluate it) or a human (don't overload them)</li>
+    <li class="reveal">⚠️ Facts don't decay on their own. Build <strong>expiry · dedupe · contradiction detection · a delete button</strong> from day one</li>
+    <li class="reveal">🧰 <code>mem0</code> — a drop-in semantic memory layer for Python</li>
+  </ul>
+  <div class="sub reveal">A confidently stale fact is <strong>worse</strong> than no memory at all.
+    Without curation, this becomes a junk drawer by month three.</div>`},
+
+/* 53 */ {seg:"s5", kind:"slide", label:"53", kicker:"Store 4 · the punchline",
+  title:"Procedural — skills, how-to",
+  html:`<ul class="bullets">
+    <li class="reveal">Learned <strong>workflows and behaviours</strong> the agent executes without re-deriving — <em>muscle memory</em></li>
+    <li class="reveal">Lives in: <strong>system prompts</strong> · <strong>few-shot examples</strong> · <strong>tool sets</strong> ·
+      <strong>files</strong> (<code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>SOUL.md</code>)</li>
+    <li class="reveal">🔑 It's usually <strong>a file you can read and edit</strong> — reviewable, diffable, version-controlled</li>
+  </ul>
+  <div class="sub reveal">The highest-leverage memory type needs <strong>no infrastructure at all</strong>.
+    Every <code>CLAUDE.md</code> in this room is procedural memory. Write the file before you build anything else.</div>`},
+
+/* 54 */ {seg:"s5", kind:"slide", label:"54", kicker:"Build order",
+  title:"What to actually build",
+  html:`<div class="steps" style="grid-template-columns:repeat(4,1fr)">
+    <div class="step reveal"><div class="n">1</div><div class="t">Procedural</div>
+      <div class="d">Write the file. Free, immediate, reviewable. <strong>Everyone.</strong></div></div>
+    <div class="step reveal"><div class="n">2</div><div class="t">Working</div>
+      <div class="d">Pick a compaction strategy before you need one. <strong>Everyone.</strong></div></div>
+    <div class="step reveal"><div class="n">3</div><div class="t">Semantic</div>
+      <div class="d">Only with a curation plan written first. <em>Some.</em></div></div>
+    <div class="step reveal"><div class="n">4</div><div class="t">Episodic</div>
+      <div class="d">Only when "what happened last time" is a real user need. <em>Few.</em></div></div>
+  </div>
+  <div class="sub reveal">Workflow before agent · simple retrieval before semantic · one agent before many ·
+    <strong>a file before a vector store</strong>. <em>That's the same rule four times.</em></div>`},
+
+/* SECTION 6 */ {seg:"s6", kind:"section", label:"§6", num:"6", kicker:"Segment 6 · ~18 min",
+  title:"Your final project — and five weeks in one segment",
+  html:`<div class="sub reveal">Ten minutes on what you're building. Then eight looking back.
+    <em>I think the second part will surprise you.</em></div>`},
+
+/* 55 */ {seg:"s6", kind:"slide", label:"55", kicker:"🛠 Assignment 5 · final project",
+  title:"A multi-agent system in your domain",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>≥ 3 agents</strong> with distinct roles — Researcher / Writer / Critic, or Planner / Executor / Validator</li>
+    <li class="reveal">A <strong>supervisor / orchestrator</strong> pattern (LangGraph · CrewAI · AutoGen · Swarm)</li>
+    <li class="reveal">State explicitly: <strong>shared state vs. message passing</strong>, and how handoffs work</li>
+    <li class="reveal"><strong>End-to-end eval</strong>: trajectory + per-agent contribution + cost + latency</li>
+    <li class="reveal">Document <strong>≥ 2 failure modes</strong> you hit — loops, deadlocks, context bloat</li>
+    <li class="reveal">🎤 <strong>10-minute demo</strong>, including the comparison to your single agent</li>
+  </ul>
+  <div class="sub reveal">The deliverable that matters is the <strong>comparison</strong>, not the system.
+    Slower and more expensive for equal quality, honestly reported, is a <em>full-credit</em> result.</div>`},
+
+/* 56 */ {seg:"s6", kind:"slide", label:"56", kicker:"Step A — before any code",
+  title:"The wall test",
+  html:`<ul class="bullets">
+    <li class="reveal">Answer in <strong>one sentence</strong>: <em>which wall am I hitting?</em>
+      <ul><li>tool overload · context bloat · serial bottleneck · team boundaries</li></ul></li>
+    <li class="reveal">Then design the split <strong>around that wall</strong> — not around human job titles</li>
+    <li class="reveal">✅ Sanity check: could <strong>better tool descriptions</strong> have solved it? <em>(often: yes)</em></li>
+  </ul>
+  <div class="sub reveal">"Better descriptions would have fixed it" is a legitimate, publishable finding.
+    Write it in the report — and build the three agents anyway, for the exercise.</div>`},
+
+/* 57 */ {seg:"s6", kind:"slide", label:"57", kicker:"Step B — build",
+  title:"Supervisor, workers, handoffs",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Orchestrator</strong>: routing prompt only — resist putting logic in it <em>(supervisor drift)</em></li>
+    <li class="reveal"><strong>Workers</strong>: ≤ 5 tools each · one clear job · <strong>no peer-to-peer calls</strong></li>
+    <li class="reveal"><strong>Handoff schema</strong>: destination · payload · ownership — <em>write the payload type down</em></li>
+    <li class="reveal">🚦 Nets <strong>before</strong> the first run: max turns · token budget · timeout · <strong>loop detection</strong></li>
+  </ul>
+  <div class="sub reveal">Two agents can hand work back and forth indefinitely, each convinced it's making progress.
+    Same handoff pair twice in a row = <strong>stop</strong>.</div>`},
+
+/* 58 */ {seg:"s6", kind:"slide", label:"58", kicker:"Step C — measure",
+  title:"Eval end-to-end, and per agent",
+  html:`<ul class="bullets">
+    <li class="reveal">Re-run your <strong>assignment-2/3/4 suite</strong> — unchanged. It still applies.</li>
+    <li class="reveal"><strong>Add</strong>: per-agent success · handoff correctness · routing accuracy · cost &amp; latency per agent</li>
+    <li class="reveal">Build <strong>5–10 tasks</strong> the single agent genuinely struggled with</li>
+    <li class="reveal">✅ One table: <strong>single vs. multi</strong>, per metric — <em>including where you lost</em></li>
+    <li class="reveal">📉 Two failure modes, each with a <strong>trace excerpt</strong></li>
+  </ul>
+  <div class="sub reveal">Your week-2 eval suite has now survived RAG, agents <em>and</em> multi-agent systems unchanged,
+    gaining columns each week. <strong>That's what it means for evaluation to be the backbone.</strong></div>`},
+
+/* 59 */ {seg:"s6", kind:"slide", label:"59", kicker:"Tonight",
+  title:"Three takeaways",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>1 · Match the planner to the task</strong> — sequential, parallel and code-native are different <em>shapes of work</em></li>
+    <li class="reveal"><strong>2 · Retrieval is a tool choice</strong> — embeddings are not the default; start simple, escalate on evidence</li>
+    <li class="reveal"><strong>3 · Memory and multi-agent are infrastructure</strong> — add them when the task <em>requires</em> persistence or specialisation</li>
+    <li class="reveal">🔑 <strong>If you don't need a second agent, don't add one.</strong></li>
+  </ul>
+  <div class="sub reveal">All three are one principle: <em>choose the simplest mechanism the evidence supports,
+    and let measurement decide when to escalate.</em> That's not AI — that's engineering.</div>`},
+
+/* 60 */ {seg:"s6", kind:"slide", label:"60", kicker:"From the beginning",
+  title:"Five weeks, one system",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>1️⃣ Prompting</strong> — how LLMs work, context, structured output → <em>you made it talk</em></li>
+    <li class="reveal"><strong>2️⃣ Evaluation</strong> — golden sets, LLM-as-a-judge, one variable at a time → <em>you learned to tell if it was any good</em></li>
+    <li class="reveal"><strong>3️⃣ RAG</strong> — chunking, embeddings, retrieval, faithfulness → <em>you gave it something true to say</em></li>
+    <li class="reveal"><strong>4️⃣ Agents</strong> — tools, workflows, ReAct, trajectories → <em>you let it decide</em></li>
+    <li class="reveal"><strong>5️⃣ Advanced &amp; multi-agent</strong> — planners, MCP, agentic RAG, teams, memory → <em>you gave it colleagues</em></li>
+  </ul>
+  <div class="sub reveal">Assignment 5 still <strong>contains</strong> assignment 1. The prompt is in there, the eval suite still runs,
+    the retriever is still a tool. <strong>One project, five times deeper.</strong></div>`},
+
+/* 61 */ {seg:"s6", kind:"slide", label:"61", kicker:"The durable part",
+  title:"Five things that were always true",
+  html:`<ul class="bullets">
+    <li class="reveal">📏 <strong>Evals come with you up every rung</strong> — same suite, more columns, every single week</li>
+    <li class="reveal">🪜 <strong>Start simple; escalate on a measurement</strong> — workflow &lt; agent · grep &lt; embeddings · one agent &lt; many · file &lt; vector store</li>
+    <li class="reveal">🔧 <strong>Tools &gt; prompts</strong> — descriptions are the highest-leverage strings you write</li>
+    <li class="reveal">🎯 <strong>Grade the outcome, not the path</strong> — and grade the world, not the model's summary</li>
+    <li class="reveal">🧾 <strong>Trace everything</strong> — if you can't read what happened, you can't fix it</li>
+  </ul>
+  <div class="sub reveal">The frameworks will all be replaced. <strong>These won't.</strong>
+    When an agent misbehaves: tool descriptions → missing deterministic logic → safety nets → context → <em>only then</em> the model.</div>`},
+
+/* 62 */ {seg:"s6", kind:"slide", label:"62", kicker:"Keep going",
+  title:"Where to go next",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Papers</strong> — ReAct · Plan-and-Act · LLMCompiler · CodeAct · CoALA · <em>Building Effective Agents</em></li>
+    <li class="reveal"><strong>Benchmarks</strong> — GAIA · SWE-bench (+ Multimodal) · τ-bench · BFCL · WebArena</li>
+    <li class="reveal"><strong>Read the source</strong> — LangGraph's agent is a few hundred readable lines. It demystifies everything</li>
+    <li class="reveal"><strong>Trends</strong> — the agentic web · MCP + <strong>A2A</strong> · small specialised models · on-device agents</li>
+    <li class="reveal">🔑 Best next step: <strong>ship something small to real users and read the traces</strong></li>
+  </ul>
+  <div class="sub reveal">None of the reading beats ten real users and a week of reading every trace.
+    That's where the learning is — and it always has been.</div>`},
+
+/* 63 */ {seg:"s6", kind:"lead", label:"63",
+  title:"Five weeks. One system. ✅",
+  html:`<div class="sub reveal">It <strong>talks</strong>, it's <strong>measured</strong>, it's <strong>grounded</strong>,
+      it <strong>decides</strong> — and now it <strong>delegates</strong> and <strong>remembers</strong>.</div>
+    <div class="chips">
+      <span class="chip reveal"><b>1</b> Prompting</span>
+      <span class="chip reveal"><b>2</b> Evals</span>
+      <span class="chip reveal"><b>3</b> RAG</span>
+      <span class="chip reveal"><b>4</b> Agents</span>
+      <span class="chip reveal"><b>5</b> Multi-Agent</span>
+    </div>
+    <div class="sub reveal" style="margin-top:1.2em"><em>Thank you — go build something small, measure it, and ship it.</em></div>`},
+];
+/* ---------- render ---------- */
+const deck = document.getElementById('deck');
+slides.forEach((s,i)=>{
+  const seg = SEG[s.seg];
+  const el = document.createElement('section');
+  el.className = 'slide ' + (s.kind||'slide');
+  el.dataset.i = i;
+  el.style.setProperty('--accent', seg.a);
+  el.style.setProperty('--accent2', seg.b);
+
+  let inner = '';
+  if(s.kind==='section'){
+    inner += `<div class="big-num reveal">${s.num||''}</div>`;
+    if(s.kicker) inner += `<div class="kicker reveal">${s.kicker}</div>`;
+    inner += `<h1 class="title reveal">${s.title}</h1>`;
+    if(s.html) inner += s.html;
+  } else if(s.kind==='lead'){
+    inner += `<h1 class="title reveal">${s.title}</h1>`;
+    if(s.html) inner += s.html;
+  } else {
+    if(s.kicker) inner += `<div class="kicker reveal">${s.kicker}</div>`;
+    inner += `<h1 class="title reveal">${s.title}</h1>`;
+    if(s.html) inner += s.html;
+  }
+  el.innerHTML = inner;
+
+  // stagger reveal children
+  const revs = el.querySelectorAll('.reveal, ul.bullets li, pre, table');
+  revs.forEach((r,idx)=>{ if(!r.classList.contains('reveal')) r.classList.add('reveal');
+    r.style.animationDelay = (0.12 + idx*0.08)+'s'; });
+
+  deck.appendChild(el);
+});
+
+/* ---------- navigation ---------- */
+const slidesEls = [...document.querySelectorAll('.slide')];
+const total = slidesEls.length;
+// highest numbered slide label, for the "n / N" counter (section dividers don't count)
+const lastLabel = Math.max(...slides.map(s=>parseInt(s.label)).filter(Number.isInteger));
+const progress = document.getElementById('progress');
+const counter = document.getElementById('counter');
+const segLabel = document.getElementById('segLabel');
+const glow = document.querySelector('.accent-glow');
+let cur = 0;
+
+function show(n){
+  n = Math.max(0, Math.min(total-1, n));
+  slidesEls.forEach(el=>el.classList.remove('active'));
+  const el = slidesEls[cur=n];
+  // reflow to restart animations
+  void el.offsetWidth;
+  el.classList.add('active');
+  const s = slides[n], seg = SEG[s.seg];
+  progress.style.width = ((n+1)/total*100)+'%';
+  counter.textContent = s.label + ' / ' + lastLabel;
+  segLabel.textContent = seg.name;
+  glow.style.background = `radial-gradient(circle, ${seg.a}, transparent 60%)`;
+  document.documentElement.style.setProperty('--accent', seg.a);
+  document.documentElement.style.setProperty('--accent2', seg.b);
+  location.hash = n;
+}
+function next(){ show(cur+1); }
+function prev(){ show(cur-1); }
+
+document.getElementById('next').onclick = next;
+document.getElementById('prev').onclick = prev;
+
+document.addEventListener('keydown', e=>{
+  if(['ArrowRight','PageDown',' '].includes(e.key)){ e.preventDefault(); next(); }
+  else if(['ArrowLeft','PageUp'].includes(e.key)){ e.preventDefault(); prev(); }
+  else if(e.key==='Home'){ show(0); }
+  else if(e.key==='End'){ show(total-1); }
+  else if(e.key==='f'||e.key==='F'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+});
+
+/* touch swipe */
+let tx=0;
+addEventListener('touchstart',e=>tx=e.changedTouches[0].clientX,{passive:true});
+addEventListener('touchend',e=>{ const dx=e.changedTouches[0].clientX-tx; if(Math.abs(dx)>50){ dx<0?next():prev(); } },{passive:true});
+
+/* start (support deep-link via hash) */
+const start = parseInt(location.hash.slice(1));
+show(Number.isInteger(start)?start:0);
+</script>
+</body>
+</html>
