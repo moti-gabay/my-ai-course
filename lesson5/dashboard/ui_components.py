@@ -25,6 +25,7 @@ SERIES_COLORS = [
 ]
 
 AGENT_ICONS = {
+    "single": "🤖",
     "single_agent": "🤖",
     "orchestrator": "🧭",
     "researcher": "📚",

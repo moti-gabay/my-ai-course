@@ -235,7 +235,7 @@ def run_single_live(
             "tool_calls_count": 0, "used_tools": [], "is_refused": True,
             "trace_steps": [],
         }
-        collector.add(_event("error", "single_agent", "Execution failed", str(exc), None, 0, t0))
+        collector.add(_event("error", "single", "Execution failed", str(exc), None, 0, t0))
     return {"result": result, "events": collector.events}
 
 
@@ -278,7 +278,7 @@ def run_team_live(
 
 def make_error_row(task: Dict[str, Any], run_num: int, config: str, exc: Exception, start_t: float) -> Dict[str, Any]:
     """Mirrors the error row shape in eval_runner.evaluate_single_agent_run."""
-    agent_key = "single_agent" if config == "single" else "team"
+    agent_key = "single" if config == "single" else "team"
     return {
         "task_id": task["task_id"],
         "task": task["task"],
@@ -290,15 +290,16 @@ def make_error_row(task: Dict[str, Any], run_num: int, config: str, exc: Excepti
         "run": run_num,
         "answer": f"ERROR: {exc}",
         "success": False,
-        "refused": True,
+        "success_method": "code",
+        "refused": False,
         "terminal_state": "error",
         "route": "[]",
         "agent_turns": 0,
         "tool_calls": 0,
-        "routing_correct": False,
-        "handoff_correct": False,
+        "routing_correct": "n/a",
+        "handoff_correct": "n/a",
         "per_agent_success": json.dumps({agent_key: False}),
-        "faithfulness": "Low",
+        "faithfulness": "n/a",
         "latency_ms": round((time.time() - start_t) * 1000, 2),
         "input_tokens": 0,
         "output_tokens": 0,

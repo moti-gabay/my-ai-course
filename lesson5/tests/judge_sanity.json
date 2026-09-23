@@ -1,0 +1,184 @@
+[
+  {
+    "id": "s1_correct_250",
+    "about": "Correct $250 bail bond answer, fully backed by the p.4 passage.",
+    "checks": [
+      {
+        "judge": "task_success",
+        "expected": "pass",
+        "inputs": {
+          "question": "How much will the auto insurer pay for bail bonds after a covered accident?",
+          "reference_answer": "Up to $250 for the cost of bail bonds required because of an accident, including related traffic law violations, where the accident results in bodily injury or property damage covered under the policy.",
+          "answer": "The Allstate policy pays up to $250 for the cost of bail bonds required because of an accident, as long as the accident results in bodily injury or property damage covered under the policy."
+        }
+      },
+      {
+        "judge": "faithfulness",
+        "expected": "supported",
+        "inputs": {
+          "tool_outputs": [
+            {
+              "tool": "search_docs",
+              "input": {
+                "query": "bail bonds",
+                "policy": "auto"
+              },
+              "output": "[1] allstate_auto_policy.pdf p.4 | score 1.61\ntrailer. \nSupplementary Payments \nWe will pay on behalf of an insured: \n1. Up to $250 for the cost of bail bonds required because of any \naccident, including related traffic law violations. The accident must\nresult in bodily injury or property damage covered under this \npolicy. \n2. Premiums on appeal bonds and bonds to release attachments in \nany suit we defend. \n3. All costs taxed against an insured and all interest accruing after a \njudgment is entered in any suit we defend. Our duty to pay interest \nends when we offer to pay that part of the judgment which does \nnot exceed our limit of liability for this coverage. \n4. Up to $200 a day for loss of earnings, but not other income, \nbecause of attendance at hearings or trails at our request. \n5. Other reasonable expenses incurred at our request. \n6. General average and salvage charges for which any insured \nbecomes legally responsible because of an auto being transported."
+            }
+          ],
+          "answer": "The Allstate policy pays up to $250 for the cost of bail bonds required because of an accident, as long as the accident results in bodily injury or property damage covered under the policy."
+        }
+      }
+    ]
+  },
+  {
+    "id": "s2_wrong_500",
+    "about": "Wrong $500 figure while the tool output says $250.",
+    "checks": [
+      {
+        "judge": "task_success",
+        "expected": "fail",
+        "inputs": {
+          "question": "How much will the auto insurer pay for bail bonds after a covered accident?",
+          "reference_answer": "Up to $250 for the cost of bail bonds required because of an accident, including related traffic law violations, where the accident results in bodily injury or property damage covered under the policy.",
+          "answer": "The policy pays up to $500 for bail bonds after a covered accident."
+        }
+      },
+      {
+        "judge": "faithfulness",
+        "expected": "unsupported",
+        "inputs": {
+          "tool_outputs": [
+            {
+              "tool": "search_docs",
+              "input": {
+                "query": "bail bonds",
+                "policy": "auto"
+              },
+              "output": "[1] allstate_auto_policy.pdf p.4 | score 1.61\ntrailer. \nSupplementary Payments \nWe will pay on behalf of an insured: \n1. Up to $250 for the cost of bail bonds required because of any \naccident, including related traffic law violations. The accident must\nresult in bodily injury or property damage covered under this \npolicy. \n2. Premiums on appeal bonds and bonds to release attachments in \nany suit we defend. \n3. All costs taxed against an insured and all interest accruing after a \njudgment is entered in any suit we defend. Our duty to pay interest \nends when we offer to pay that part of the judgment which does \nnot exceed our limit of liability for this coverage. \n4. Up to $200 a day for loss of earnings, but not other income, \nbecause of attendance at hearings or trails at our request. \n5. Other reasonable expenses incurred at our request. \n6. General average and salvage charges for which any insured \nbecomes legally responsible because of an auto being transported."
+            }
+          ],
+          "answer": "The policy pays up to $500 for bail bonds after a covered accident."
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3_invented_extra",
+    "about": "Correct $250 plus one invented claim (attorney fees) absent from the tool output.",
+    "checks": [
+      {
+        "judge": "faithfulness",
+        "expected": "partially_supported",
+        "inputs": {
+          "tool_outputs": [
+            {
+              "tool": "search_docs",
+              "input": {
+                "query": "bail bonds",
+                "policy": "auto"
+              },
+              "output": "[1] allstate_auto_policy.pdf p.4 | score 1.61\ntrailer. \nSupplementary Payments \nWe will pay on behalf of an insured: \n1. Up to $250 for the cost of bail bonds required because of any \naccident, including related traffic law violations. The accident must\nresult in bodily injury or property damage covered under this \npolicy. \n2. Premiums on appeal bonds and bonds to release attachments in \nany suit we defend. \n3. All costs taxed against an insured and all interest accruing after a \njudgment is entered in any suit we defend. Our duty to pay interest \nends when we offer to pay that part of the judgment which does \nnot exceed our limit of liability for this coverage. \n4. Up to $200 a day for loss of earnings, but not other income, \nbecause of attendance at hearings or trails at our request. \n5. Other reasonable expenses incurred at our request. \n6. General average and salvage charges for which any insured \nbecomes legally responsible because of an auto being transported."
+            }
+          ],
+          "answer": "The policy pays up to $250 for bail bonds after a covered accident. It also reimburses up to $1,000 of attorney fees for the related traffic hearing."
+        }
+      }
+    ]
+  },
+  {
+    "id": "s4_clean_refusal",
+    "about": "Clean refusal on an unanswerable question after a NO_RESULTS search.",
+    "checks": [
+      {
+        "judge": "task_success",
+        "expected": "pass",
+        "inputs": {
+          "question": "What is the annual premium for the Allstate auto policy for a 35-year-old driver garaged in Virginia?",
+          "reference_answer": "Not answerable from the corpus. Premium amounts are set in the policy declarations, which are not part of the policy documents.",
+          "answer": "I can't find a premium amount in the policy documents. The policy wording doesn't list premiums for specific drivers, so I can't tell you what this would cost."
+        }
+      },
+      {
+        "judge": "faithfulness",
+        "expected": "no_claims",
+        "inputs": {
+          "tool_outputs": [
+            {
+              "tool": "search_docs",
+              "input": {
+                "query": "annual premium amount for a 35-year-old driver",
+                "policy": "auto"
+              },
+              "output": "NO_RESULTS: best passage scored -8.61, below the relevance threshold -7.00. The corpus likely does not cover this."
+            }
+          ],
+          "answer": "I can't find a premium amount in the policy documents. The policy wording doesn't list premiums for specific drivers, so I can't tell you what this would cost."
+        }
+      }
+    ]
+  },
+  {
+    "id": "s5_hebrew_250",
+    "about": "Hebrew answer with the right $250 figure.",
+    "checks": [
+      {
+        "judge": "task_success",
+        "expected": "pass",
+        "inputs": {
+          "question": "How much will the auto insurer pay for bail bonds after a covered accident? Answer in Hebrew.",
+          "reference_answer": "Up to $250 for the cost of bail bonds required because of an accident, including related traffic law violations, where the accident results in bodily injury or property damage covered under the policy.",
+          "answer": "הפוליסה משלמת עד $250 עבור עלות ערבות הנדרשת בעקבות תאונה, בתנאי שהתאונה גרמה לנזק גוף או לנזק רכוש המכוסים בפוליסה."
+        }
+      },
+      {
+        "judge": "faithfulness",
+        "expected": "supported",
+        "inputs": {
+          "tool_outputs": [
+            {
+              "tool": "search_docs",
+              "input": {
+                "query": "bail bonds",
+                "policy": "auto"
+              },
+              "output": "[1] allstate_auto_policy.pdf p.4 | score 1.61\ntrailer. \nSupplementary Payments \nWe will pay on behalf of an insured: \n1. Up to $250 for the cost of bail bonds required because of any \naccident, including related traffic law violations. The accident must\nresult in bodily injury or property damage covered under this \npolicy. \n2. Premiums on appeal bonds and bonds to release attachments in \nany suit we defend. \n3. All costs taxed against an insured and all interest accruing after a \njudgment is entered in any suit we defend. Our duty to pay interest \nends when we offer to pay that part of the judgment which does \nnot exceed our limit of liability for this coverage. \n4. Up to $200 a day for loss of earnings, but not other income, \nbecause of attendance at hearings or trails at our request. \n5. Other reasonable expenses incurred at our request. \n6. General average and salvage charges for which any insured \nbecomes legally responsible because of an auto being transported."
+            }
+          ],
+          "answer": "הפוליסה משלמת עד $250 עבור עלות ערבות הנדרשת בעקבות תאונה, בתנאי שהתאונה גרמה לנזק גוף או לנזק רכוש המכוסים בפוליסה."
+        }
+      }
+    ]
+  },
+  {
+    "id": "s6_corrupted_payload",
+    "about": "Analyst correctly computes from a corrupted payload ($500 instead of $250): its own job is done.",
+    "checks": [
+      {
+        "judge": "agent_turn",
+        "expected": "pass",
+        "inputs": {
+          "role": "FinancialAnalyst: Evaluates numerical mathematical formulas, deductibles, VAT additions, and financial figures.",
+          "received_payload": {
+            "summary": "Researcher found the bail bond limit.",
+            "constraints": [],
+            "facts": {
+              "researcher": "The auto policy pays up to $500 for bail bonds per accident."
+            },
+            "open_question": "Compute the maximum total bail bond reimbursement for 3 separate covered accidents."
+          },
+          "tool_outputs": [
+            {
+              "tool": "calculator",
+              "input": {
+                "expression": "500 * 3"
+              },
+              "output": "RESULT: 1500"
+            }
+          ],
+          "output": "Using the $500 per-accident bail bond limit provided, the maximum for 3 separate accidents is 500 x 3 = $1,500."
+        }
+      }
+    ]
+  }
+]

@@ -19,6 +19,10 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).with_name(".env"))  # RAG_INDEX / RAG_MIN_RERANK_SCORE; never overrides the shell
+
 LESSON3_DIR = Path(__file__).resolve().parents[1] / "lesson3"
 CORPUS_DIR = LESSON3_DIR / "corpus"
 EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"      # must match lesson3/build_index.py

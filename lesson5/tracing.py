@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from langchain_core.callbacks import get_usage_metadata_callback
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 
@@ -83,6 +84,7 @@ class ReactOutcome:
     output_tokens: int = 0
     breach: Optional[str] = None       # set when `check` stopped the run
     error: Optional[str] = None        # exception text; the run never raises
+    structured: Any = None             # response_format result (e.g. WorkerResult), if the graph has one
 
 
 def run_traced_react(graph, query: str, rt: RunTrace, agent: str,
@@ -93,45 +95,66 @@ def run_traced_react(graph, query: str, rt: RunTrace, agent: str,
     `check` runs after every graph step and returns a breach reason to stop early;
     it sees tokens through rt.account(), which is updated before it is called.
     Tool durations are per tools-node step: parallel calls in one step share it.
+
+    With response_format, LangGraph makes one extra model call that returns only the
+    parsed object, no message and no usage. A usage callback captures every call in the
+    run, so that call's tokens are the callback total minus the traced messages' tokens.
     """
     out = ReactOutcome()
     requested: Dict[str, Dict[str, Any]] = {}
-    last = time.time()
     try:
-        for update in graph.stream({"messages": [HumanMessage(content=query)]},
-                                   config=config or {}, stream_mode="updates"):
-            now = time.time()
-            step_ms = round((now - last) * 1000, 1)
-            last = now
-            tool_msgs = [m for delta in update.values() if delta
-                         for m in delta.get("messages", []) if isinstance(m, ToolMessage)]
-            for delta in update.values():
-                for m in (delta or {}).get("messages", []):
-                    if isinstance(m, AIMessage):
-                        usage = m.usage_metadata or {}
-                        in_t, out_t = usage.get("input_tokens", 0), usage.get("output_tokens", 0)
-                        out.input_tokens += in_t
-                        out.output_tokens += out_t
-                        rt.account(agent, input_tokens=in_t, output_tokens=out_t)
-                        rt.emit(agent, "llm_call", owner=agent, duration_ms=step_ms,
-                                input_tokens=in_t, output_tokens=out_t,
-                                requested_tools=[{"name": tc["name"], "args": tc["args"]} for tc in m.tool_calls],
-                                text=m.text)
-                        for tc in m.tool_calls:
-                            requested[tc["id"]] = tc
-                        if not m.tool_calls:
-                            out.text = m.text
-                    elif isinstance(m, ToolMessage):
-                        tc = requested.pop(m.tool_call_id, {})
-                        output = m.text if isinstance(m.content, list) else str(m.content)
-                        out.tool_outputs.append({"tool": m.name, "input": tc.get("args"), "output": output})
-                        rt.account(agent, tool_calls=1)
-                        rt.emit(agent, "tool_call", owner=agent, tool=m.name, input=tc.get("args"),
-                                output=output, duration_ms=step_ms, parallel_calls=len(tool_msgs))
-            if check:
-                out.breach = check()
-                if out.breach:
-                    return out
+        with get_usage_metadata_callback() as usage_cb:
+            _stream(graph, query, rt, agent, check, config, out, requested, usage_cb)
     except Exception as e:  # recursion limit, API error, tool bug: recorded, never raised
         out.error = f"{type(e).__name__}: {e}"
     return out
+
+
+def _stream(graph, query, rt, agent, check, config, out, requested, usage_cb) -> None:
+    last = time.time()
+    for update in graph.stream({"messages": [HumanMessage(content=query)]},
+                               config=config or {}, stream_mode="updates"):
+        now = time.time()
+        step_ms = round((now - last) * 1000, 1)
+        last = now
+        tool_msgs = [m for delta in update.values() if delta
+                     for m in delta.get("messages", []) if isinstance(m, ToolMessage)]
+        for delta in update.values():
+            for m in (delta or {}).get("messages", []):
+                if isinstance(m, AIMessage):
+                    usage = m.usage_metadata or {}
+                    in_t, out_t = usage.get("input_tokens", 0), usage.get("output_tokens", 0)
+                    out.input_tokens += in_t
+                    out.output_tokens += out_t
+                    rt.account(agent, input_tokens=in_t, output_tokens=out_t)
+                    rt.emit(agent, "llm_call", owner=agent, duration_ms=step_ms,
+                            input_tokens=in_t, output_tokens=out_t,
+                            requested_tools=[{"name": tc["name"], "args": tc["args"]} for tc in m.tool_calls],
+                            text=m.text)
+                    for tc in m.tool_calls:
+                        requested[tc["id"]] = tc
+                    if not m.tool_calls:
+                        out.text = m.text
+                elif isinstance(m, ToolMessage):
+                    tc = requested.pop(m.tool_call_id, {})
+                    output = m.text if isinstance(m.content, list) else str(m.content)
+                    out.tool_outputs.append({"tool": m.name, "input": tc.get("args"), "output": output})
+                    rt.account(agent, tool_calls=1)
+                    rt.emit(agent, "tool_call", owner=agent, tool=m.name, input=tc.get("args"),
+                            output=output, duration_ms=step_ms, parallel_calls=len(tool_msgs))
+        for delta in update.values():
+            if delta and delta.get("structured_response") is not None:
+                out.structured = delta["structured_response"]
+                total_in = sum(u.get("input_tokens", 0) for u in usage_cb.usage_metadata.values())
+                total_out = sum(u.get("output_tokens", 0) for u in usage_cb.usage_metadata.values())
+                in_t, out_t = total_in - out.input_tokens, total_out - out.output_tokens
+                out.input_tokens, out.output_tokens = total_in, total_out
+                rt.account(agent, input_tokens=in_t, output_tokens=out_t)
+                rt.emit(agent, "llm_call", owner=agent, duration_ms=step_ms,
+                        input_tokens=in_t, output_tokens=out_t, requested_tools=[],
+                        purpose="structured_response",
+                        text=out.structured.model_dump() if hasattr(out.structured, "model_dump") else out.structured)
+        if check:
+            out.breach = check()
+            if out.breach:
+                return

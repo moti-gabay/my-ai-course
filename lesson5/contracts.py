@@ -60,6 +60,29 @@ class Handoff(BaseModel):
         default=None,
         description="Only when destination is 'orchestrator': the complete reply to the user. Leave empty otherwise."
     )
+    refused: bool = Field(
+        default=False,
+        description="Only with direct_answer: true if the reply declines because the answer is not available "
+                    "(not in the documents, a tool failed, or out of scope); false if it answers the request."
+    )
+
+
+class WorkerResult(BaseModel):
+    """
+    Structured final output of every worker and of the single agent.
+    Refusal is a field the model sets, not a keyword the evaluator guesses.
+    """
+    answer: str = Field(
+        description="Your complete reply to the request you were given, including any figures and sources."
+    )
+    refused: bool = Field(
+        description="True if you are declining because the answer is not available (not in the documents, "
+                    "a tool failed, or out of scope); false if `answer` answers the request."
+    )
+    refusal_reason: str = Field(
+        default="",
+        description="When refused is true: one sentence on why. Empty otherwise."
+    )
 
 
 # ============================================================================

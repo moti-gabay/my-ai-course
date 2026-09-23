@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from tools import ALL_TOOLS
 import retriever
 from tracing import UnitOfWorkTracer, run_traced_react
+from contracts import WorkerResult
 from langgraph.prebuilt import create_react_agent
 
 # טעינת מפתחות ה-API מקובץ ה-.env שליד הסקריפט
@@ -53,7 +54,8 @@ class LangGraphAgentRunner:
         self.graph = create_react_agent(
             model=self.llm,
             tools=ALL_TOOLS,
-            prompt=self.system_prompt
+            prompt=self.system_prompt,
+            response_format=WorkerResult,  # same structured answer/refused contract as the team workers
         )
 
     def run_task(
@@ -91,16 +93,22 @@ class LangGraphAgentRunner:
         elif outcome.error:
             status, terminal_state, breach_reason = "execution_error", "error", outcome.error
             error_message = f"Runtime error: {outcome.error}"
+        elif outcome.structured is None:
+            status, terminal_state, breach_reason = "execution_error", "error", "no structured response"
+            error_message = "Runtime error: the agent finished without a structured response."
         else:
-            status, terminal_state, breach_reason, error_message = "success", "answered", None, None
+            status, breach_reason, error_message = "success", None, None
+            terminal_state = "refused" if outcome.structured.refused else "answered"
         if outcome.breach or outcome.error:
             rt.emit("single", "net_breach" if terminal_state == "cap_breached" else "error",
                     owner="single", reason=breach_reason)
-        final_text = outcome.text if status == "success" else f"ERROR: Task execution stopped due to: {error_message}"
-
-        # זיהוי האם התגובה היא סירוב (Refusal detection)
-        refusal_keywords = ["cannot answer", "not mentioned", "unavailable", "refuse", "do not have", "failed", "restricted"]
-        is_refused = any(kw in final_text.lower() for kw in refusal_keywords) or not task_data.get("answerable", True)
+        if status == "success":
+            final_text = outcome.structured.answer
+        else:
+            final_text = f"ERROR: Task execution stopped due to: {error_message}"
+        # Refusal is the model's own structured flag; a breach or error is not a refusal.
+        is_refused = status == "success" and outcome.structured.refused
+        refusal_reason = outcome.structured.refusal_reason if is_refused else ""
 
         totals = rt.totals()
         rt.summary(
@@ -114,6 +122,7 @@ class LangGraphAgentRunner:
             total_tokens=totals["input_tokens"] + totals["output_tokens"],
             tool_calls=totals["tool_calls"],
             duration_ms=round(latency * 1000, 1),
+            refused=is_refused,
             final_answer=final_text,
         )
 
@@ -134,6 +143,7 @@ class LangGraphAgentRunner:
             "tool_outputs": outcome.tool_outputs,
             "per_agent": rt.per_agent,
             "is_refused": is_refused,
+            "refusal_reason": refusal_reason,
             "user_query": user_query,
             "final_answer": final_text,
         }

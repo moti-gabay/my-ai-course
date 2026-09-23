@@ -20,7 +20,7 @@ from langgraph.prebuilt import create_react_agent
 
 # Import Contracts & Tools
 from contracts import (
-    AgentName, HandoffPayload, Handoff, TeamState, AGENT_SCOPE_CONTRACTS
+    AgentName, HandoffPayload, Handoff, TeamState, WorkerResult, AGENT_SCOPE_CONTRACTS
 )
 from tools import ALL_TOOLS, search_docs, calculator, read_policy_page
 import retriever
@@ -77,9 +77,9 @@ class SafetyNetChecker:
 # 2. Helpers for Dynamic LangGraph Version Compatibility
 # ---------------------------------------------------------------------------
 
-def create_agent_compat(llm, tools, prompt_text):
+def create_agent_compat(llm, tools, prompt_text, response_format=None):
     sig = inspect.signature(create_react_agent)
-    kwargs = {}
+    kwargs = {"response_format": response_format} if response_format else {}
     if "prompt" in sig.parameters:
         kwargs["prompt"] = prompt_text
     elif "state_modifier" in sig.parameters:
@@ -129,13 +129,13 @@ class MultiAgentTeam:
         res_scope = AGENT_SCOPE_CONTRACTS[AgentName.RESEARCHER]
         res_prompt = f"{res_scope['scope']}\n\nHouse Rules:\n{self.procedural_memory}"
         self.researcher_agent = create_agent_compat(
-            self.llm, [search_docs, read_policy_page], res_prompt
+            self.llm, [search_docs, read_policy_page], res_prompt, response_format=WorkerResult
         )
 
         ana_scope = AGENT_SCOPE_CONTRACTS[AgentName.ANALYST]
         ana_prompt = f"{ana_scope['scope']}\n\nHouse Rules:\n{self.procedural_memory}"
         self.analyst_agent = create_agent_compat(
-            self.llm, [calculator], ana_prompt
+            self.llm, [calculator], ana_prompt, response_format=WorkerResult
         )
 
         wri_scope = AGENT_SCOPE_CONTRACTS[AgentName.WRITER]
@@ -186,19 +186,25 @@ CRITICAL ROUTING RULES:
     def _run_writer(self, query: str, rt: RunTrace) -> ReactOutcome:
         out = ReactOutcome()
         t0 = time.time()
+        writer_llm = self.llm.with_structured_output(WorkerResult, method="function_calling", include_raw=True)
         try:
-            msg = self.llm.invoke([SystemMessage(content=self.writer_prompt), HumanMessage(content=query)])
+            res = writer_llm.invoke([SystemMessage(content=self.writer_prompt), HumanMessage(content=query)])
         except Exception as e:
             out.error = f"{type(e).__name__}: {e}"
             return out
+        msg = res["raw"]
         usage = msg.usage_metadata or {}
-        out.text = msg.text
+        out.structured = res.get("parsed")
+        if out.structured is None:
+            out.error = f"writer output did not parse: {res.get('parsing_error')}"
+        out.text = out.structured.answer if out.structured else msg.text
         out.input_tokens, out.output_tokens = usage.get("input_tokens", 0), usage.get("output_tokens", 0)
         rt.account(AgentName.WRITER.value, input_tokens=out.input_tokens, output_tokens=out.output_tokens)
         rt.emit(AgentName.WRITER.value, "llm_call", owner=AgentName.WRITER.value,
                 duration_ms=round((time.time() - t0) * 1000, 1),
                 input_tokens=out.input_tokens, output_tokens=out.output_tokens,
-                requested_tools=[], text=out.text)
+                requested_tools=[], purpose="structured_response",
+                text=out.structured.model_dump() if out.structured else msg.text)
         return out
 
     def run_task(self, task_id: str, user_query: str, run_num: int = 1) -> Dict[str, Any]:
@@ -227,7 +233,9 @@ CRITICAL ROUTING RULES:
         }
 
         workers: List[str] = []           # ordered worker route, the loop net reads this
+        turns: List[Dict[str, Any]] = []  # per worker turn: what it received and returned (per-agent judge)
         final_answer, last_worker_output = "", ""
+        final_refused, last_worker_refused, refusal_reason = False, False, ""
         terminal_state, breach_reason = None, None
 
         while terminal_state is None:
@@ -252,8 +260,12 @@ CRITICAL ROUTING RULES:
             if handoff.destination == orch:
                 direct = (handoff.direct_answer or "").strip()
                 final_answer = direct or last_worker_output
+                final_refused = handoff.refused if direct else last_worker_refused
+                if direct and handoff.refused:
+                    refusal_reason = handoff.reason
                 rt.emit(orch, "direct_answer", owner=orch, reason=handoff.reason,
-                        direct_answer=handoff.direct_answer, used_last_worker_output=not direct,
+                        direct_answer=handoff.direct_answer, refused=handoff.refused,
+                        used_last_worker_output=not direct,
                         duration_ms=duration, input_tokens=in_t, output_tokens=out_t)
                 if final_answer:
                     terminal_state = "answered"
@@ -302,11 +314,20 @@ CRITICAL ROUTING RULES:
                 outcome = self._run_writer(worker_query, rt)
 
             duration = round((time.time() - t0) * 1000, 1)
+            if not (outcome.error or outcome.breach) and outcome.structured is None:
+                outcome.error = f"{dest} finished without a structured response"
+            worker_output = outcome.structured.answer if outcome.structured else outcome.text
+            worker_refused = bool(outcome.structured and outcome.structured.refused)
             rt.account(dest, duration_ms=duration, turns=1)
             rt.emit(dest, "worker_turn", owner=dest, received_payload=payload.model_dump(),
-                    query=worker_query, output=outcome.text, tool_calls=len(outcome.tool_outputs),
+                    query=worker_query, output=worker_output, refused=worker_refused,
+                    refusal_reason=outcome.structured.refusal_reason if worker_refused else "",
+                    tool_calls=len(outcome.tool_outputs),
                     input_tokens=outcome.input_tokens, output_tokens=outcome.output_tokens,
                     duration_ms=duration, breach=outcome.breach, error=outcome.error)
+            turns.append({"agent": dest, "received_payload": payload.model_dump(), "query": worker_query,
+                          "output": worker_output, "refused": worker_refused,
+                          "tool_outputs": outcome.tool_outputs})
 
             if outcome.error:
                 terminal_state, breach_reason = "error", outcome.error
@@ -316,9 +337,11 @@ CRITICAL ROUTING RULES:
                 rt.emit(dest, "net_breach", owner=dest, reason=outcome.breach)
                 break
 
-            last_worker_output = outcome.text
+            last_worker_output, last_worker_refused = worker_output, worker_refused
+            if worker_refused:
+                refusal_reason = outcome.structured.refusal_reason
             updated_facts = payload.facts
-            updated_facts[dest] = outcome.text
+            updated_facts[dest] = worker_output
 
             state["handoff_data"] = HandoffPayload(
                 summary=f"{dest} completed step.",
@@ -328,12 +351,15 @@ CRITICAL ROUTING RULES:
             ).model_dump()
 
             if dest == AgentName.WRITER.value:
-                final_answer = outcome.text
+                final_answer, final_refused = worker_output, worker_refused
                 terminal_state = "answered"
             else:
                 state["last_active"] = orch
                 state["route_history"].append(orch)
 
+        if terminal_state == "answered" and final_refused:
+            terminal_state = "refused"
+        is_refused = terminal_state == "refused"   # a breach or error is not a refusal
         if terminal_state in ("cap_breached", "loop_detected"):
             final_answer = f"Could not complete the request: {breach_reason} limit reached."
         elif terminal_state == "error" and not final_answer:
@@ -354,11 +380,9 @@ CRITICAL ROUTING RULES:
             total_tokens=totals["input_tokens"] + totals["output_tokens"],
             tool_calls=totals["tool_calls"],
             duration_ms=round(total_duration * 1000, 1),
+            refused=is_refused,
             final_answer=final_answer,
         )
-
-        refusal_keywords = ["cannot answer", "missing", "unanswerable", "refuse", "not mentioned", "cap_breached"]
-        is_refused = any(kw in final_answer.lower() for kw in refusal_keywords)
 
         return {
             "task_id": task_id,
@@ -373,8 +397,11 @@ CRITICAL ROUTING RULES:
             "total_tokens": totals["input_tokens"] + totals["output_tokens"],
             "tool_calls": totals["tool_calls"],
             "per_agent": rt.per_agent,
+            "turns": turns,
+            "tool_outputs": [t for turn in turns for t in turn["tool_outputs"]],
             "latency_seconds": round(total_duration, 3),
-            "is_refused": is_refused
+            "is_refused": is_refused,
+            "refusal_reason": refusal_reason if is_refused else ""
         }
 
 
