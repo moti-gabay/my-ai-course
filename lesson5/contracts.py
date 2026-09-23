@@ -85,7 +85,7 @@ AGENT_SCOPE_CONTRACTS = {
     AgentName.RESEARCHER: {
         "name": "PolicyResearcher",
         "scope": "Retrieves exact insurance policy clauses, coverage limits, and deductible terms from the knowledge corpus.",
-        "tools": ["search_docs", "policy_lookup_by_id"],
+        "tools": ["search_docs", "read_policy_page"],
         "max_tools": 2,
     },
     AgentName.ANALYST: {

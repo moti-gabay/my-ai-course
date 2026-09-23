@@ -24,7 +24,7 @@ from langgraph.graph import StateGraph, END
 from contracts import (
     AgentName, HandoffPayload, Handoff, TeamState, AGENT_SCOPE_CONTRACTS
 )
-from tools import ALL_TOOLS, search_docs, calculator, policy_lookup_by_id
+from tools import ALL_TOOLS, search_docs, calculator, read_policy_page
 
 # ---------------------------------------------------------------------------
 # 1. JSONL Unit-of-Work Tracer
@@ -175,7 +175,7 @@ class MultiAgentTeam:
         res_scope = AGENT_SCOPE_CONTRACTS[AgentName.RESEARCHER]
         res_prompt = f"{res_scope['scope']}\n\nHouse Rules:\n{self.procedural_memory}"
         self.researcher_agent = create_agent_compat(
-            self.llm, [search_docs, policy_lookup_by_id], res_prompt
+            self.llm, [search_docs, read_policy_page], res_prompt
         )
 
         ana_scope = AGENT_SCOPE_CONTRACTS[AgentName.ANALYST]
