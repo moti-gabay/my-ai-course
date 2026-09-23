@@ -22,14 +22,16 @@ for case in cases:
     case_ok, rows = True, []
     for chk in case["checks"]:
         r = FNS[chk["judge"]](**chk["inputs"])
-        ok = r["verdict"] == chk["expected"]
+        allowed = chk["expected"] if isinstance(chk["expected"], list) else [chk["expected"]]
+        ok = r["verdict"] in allowed
+        shown = "|".join(allowed)
         case_ok &= ok
         agree_checks += ok
         n_checks += 1
         tok_in += r["input_tokens"] if not r["cached"] else 0
         tok_out += r["output_tokens"] if not r["cached"] else 0
         rows.append({"judge": chk["judge"], "expected": chk["expected"], **r, "agree": ok})
-        print(f"{'OK  ' if ok else 'DIFF'} {case['id']:<22} {chk['judge']:<13} expected={chk['expected']:<20} got={r['verdict']:<20}"
+        print(f"{'OK  ' if ok else 'DIFF'} {case['id']:<22} {chk['judge']:<13} expected={shown:<20} got={r['verdict']:<20}"
               f" tokens={r['input_tokens']}/{r['output_tokens']}{' (cached)' if r['cached'] else ''}")
         print(f"      explanation: {r['explanation']}")
     agree_cases += case_ok

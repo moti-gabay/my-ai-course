@@ -1,7 +1,7 @@
 {
   "model": "claude-sonnet-5",
-  "agreement_cases": "6/6",
-  "agreement_verdicts": "10/10",
+  "agreement_cases": "7/8",
+  "agreement_verdicts": "11/12",
   "cases": [
     {
       "id": "s1_correct_250",
@@ -15,7 +15,7 @@
           "explanation": "The answer matches the reference: $250 limit for bail bonds required due to a covered accident resulting in bodily injury or property damage. It omits the mention of related traffic law violations, but the core figures and conditions align.",
           "input_tokens": 754,
           "output_tokens": 87,
-          "cached": false,
+          "cached": true,
           "agree": true
         },
         {
@@ -25,7 +25,7 @@
           "explanation": "The answer states the Allstate policy pays up to $250 for bail bonds required because of an accident, provided the accident results in covered bodily injury or property damage. This directly matches the tool output text: 'Up to $250 for the cost of bail bonds required because of any accident... The accident must result in bodily injury or property damage covered under this policy.' All claims are fully supported.",
           "input_tokens": 1080,
           "output_tokens": 189,
-          "cached": false,
+          "cached": true,
           "agree": true
         }
       ]
@@ -42,7 +42,7 @@
           "explanation": "Reference states the coverage limit is up to $250 for bail bonds, but the answer says up to $500, which contradicts the key figure in the reference.",
           "input_tokens": 722,
           "output_tokens": 66,
-          "cached": false,
+          "cached": true,
           "agree": true
         },
         {
@@ -52,7 +52,7 @@
           "explanation": "The tool output states coverage is 'Up to $250 for the cost of bail bonds', but the answer claims 'up to $500', which contradicts the source document.",
           "input_tokens": 1048,
           "output_tokens": 71,
-          "cached": false,
+          "cached": true,
           "agree": true
         }
       ]
@@ -69,7 +69,7 @@
           "explanation": "The claim about $250 bail bond coverage is directly supported by the tool output. However, the claim about reimbursing up to $1,000 of attorney fees for related traffic hearings is not mentioned anywhere in the tool output; the document instead mentions $200/day for loss of earnings, not attorney fees, and no $1,000 attorney fee figure appears.",
           "input_tokens": 1077,
           "output_tokens": 138,
-          "cached": false,
+          "cached": true,
           "agree": true
         }
       ]
@@ -86,7 +86,7 @@
           "explanation": "The answer correctly declines to provide a specific premium figure, stating it cannot be found in the policy documents, matching the reference's conclusion that this is not answerable from the corpus without inventing a value.",
           "input_tokens": 744,
           "output_tokens": 82,
-          "cached": false,
+          "cached": true,
           "agree": true
         },
         {
@@ -96,7 +96,7 @@
           "explanation": "The answer states that no premium information was found in the policy documents, which matches the tool output showing NO_RESULTS (below relevance threshold). The answer makes no additional factual claims beyond acknowledging the absence of information, which is not a factual claim requiring support but rather a statement that information is unavailable.",
           "input_tokens": 791,
           "output_tokens": 117,
-          "cached": false,
+          "cached": true,
           "agree": true
         }
       ]
@@ -113,7 +113,7 @@
           "explanation": "The answer states up to $250 for bail bond costs required due to an accident causing bodily injury or property damage covered under the policy, matching the reference's key figure and condition. It omits mention of related traffic law violations, but the core fact ($250 limit, condition of covered accident) is correct.",
           "input_tokens": 793,
           "output_tokens": 110,
-          "cached": false,
+          "cached": true,
           "agree": true
         },
         {
@@ -123,7 +123,7 @@
           "explanation": "The answer states that the policy pays up to $250 for bail bond costs required due to an accident, provided the accident caused bodily injury or property damage covered under the policy. This directly matches item 1 in the tool output: 'Up to $250 for the cost of bail bonds required because of any accident, including related traffic law violations. The accident must result in bodily injury or property damage covered under this policy.' All claims are fully supported.",
           "input_tokens": 1109,
           "output_tokens": 152,
-          "cached": false,
+          "cached": true,
           "agree": true
         }
       ]
@@ -140,6 +140,43 @@
           "explanation": "The agent was asked to compute the maximum total bail bond reimbursement for 3 accidents, given a $500 per-accident limit from the researcher's facts. It correctly used the calculator tool to compute 500*3=1500 and accurately reported the tool result without inventing extra facts or exceeding its role as financial analyst. The output is clear and usable by downstream steps.",
           "input_tokens": 888,
           "output_tokens": 139,
+          "cached": true,
+          "agree": true
+        }
+      ]
+    },
+    {
+      "id": "s7_refusal_with_invented_facts",
+      "about": "Team final answer for p2_premium (traces/smoke/phase2_team.jsonl): refuses, but asserts a phone number, a website and credit score as a rating factor with no tool output behind them (0 tool calls).",
+      "agree": false,
+      "checks": [
+        {
+          "judge": "faithfulness",
+          "expected": [
+            "unsupported",
+            "partially_supported"
+          ],
+          "verdict": "no_claims",
+          "explanation": "The answer declines to provide a specific figure and explains why, without asserting any verifiable factual claims about coverage, limits, or amounts. Statements like contacting Allstate at a phone number or website are generic suggestions, not factual claims requiring tool support. This is essentially a refusal/explanation of unavailability.",
+          "input_tokens": 904,
+          "output_tokens": 122,
+          "cached": true,
+          "agree": false
+        }
+      ]
+    },
+    {
+      "id": "s8_refusal_generic_advice",
+      "about": "Clean refusal with only generic advice: guards against over-correcting s7.",
+      "agree": true,
+      "checks": [
+        {
+          "judge": "faithfulness",
+          "expected": "no_claims",
+          "verdict": "no_claims",
+          "explanation": "The answer contains no factual claims about coverage, limits, amounts, or conditions; it simply states that the information is unavailable and directs the user to contact the insurer. This is a refusal/unavailability statement, not a factual claim requiring verification against tool outputs.",
+          "input_tokens": 701,
+          "output_tokens": 105,
           "cached": false,
           "agree": true
         }

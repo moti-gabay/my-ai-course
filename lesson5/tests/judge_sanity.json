@@ -180,5 +180,36 @@
         }
       }
     ]
+  },
+  {
+    "id": "s7_refusal_with_invented_facts",
+    "about": "Team final answer for p2_premium (traces/smoke/phase2_team.jsonl): refuses, but asserts a phone number, a website and credit score as a rating factor with no tool output behind them (0 tool calls).",
+    "checks": [
+      {
+        "judge": "faithfulness",
+        "expected": [
+          "unsupported",
+          "partially_supported"
+        ],
+        "inputs": {
+          "tool_outputs": [],
+          "answer": "I cannot provide a specific annual premium for an Allstate auto policy for a 35-year-old driver in Virginia. Premium pricing is not available in standard policy documents and varies significantly based on individual factors including:\n\n- Driving history and record\n- Vehicle type and age\n- Coverage selections and deductibles\n- Applicable discounts (bundling, safety features, etc.)\n- Credit score and other underwriting factors\n\n**To get an accurate quote, you should:**\n1. Contact Allstate directly at 1-800-ALLSTATE or visit allstate.com\n2. Use their online quote tool\n3. Speak with a local Allstate agent\n\nThey will need detailed information about your vehicle and driving history to provide a personalized premium."
+        }
+      }
+    ]
+  },
+  {
+    "id": "s8_refusal_generic_advice",
+    "about": "Clean refusal with only generic advice: guards against over-correcting s7.",
+    "checks": [
+      {
+        "judge": "faithfulness",
+        "expected": "no_claims",
+        "inputs": {
+          "tool_outputs": [],
+          "answer": "That information isn't in the policy documents, so I can't give you a premium. Please contact your insurer for a quote."
+        }
+      }
+    ]
   }
 ]
