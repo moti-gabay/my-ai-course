@@ -48,7 +48,7 @@ def render_sidebar(default_agents_md: str) -> RunConfig:
     sb.title("⚙️ Configuration")
 
     if api_key_present():
-        sb.caption("✅ OPENAI_API_KEY loaded from lesson4/.env")
+        sb.caption("✅ OPENAI_API_KEY loaded from lesson5/.env")
     else:
         sb.error("No OPENAI_API_KEY. Playground and Benchmark are disabled; Analytics still works.")
 

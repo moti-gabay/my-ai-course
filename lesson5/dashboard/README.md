@@ -6,16 +6,15 @@ Streamlit front-end for the Assignment 4/5 agents. It drives the existing module
 ## Setup
 
 ```bash
-cd lesson4
-python3 -m pip install -r requirements-dashboard.txt   # adds streamlit + plotly
-streamlit run dashboard/app.py
+cd lesson5                              # venv setup: see ../README_SETUP.md
+.venv/bin/streamlit run dashboard/app.py
 ```
 
-`OPENAI_API_KEY` is read from `lesson4/.env` (loaded by `agent.py` / `team.py`).
+`OPENAI_API_KEY` is read from `lesson5/.env` (loaded by `agent.py` / `team.py`).
 Without a key the Playground and Benchmark tabs are disabled; **Analytics still works**,
 since it only reads Excel files.
 
-Always launch from inside `lesson4/`. The dashboard resolves its own paths absolutely,
+Always launch from inside `lesson5/`. The dashboard resolves its own paths absolutely,
 but the underlying modules still default to CWD-relative files.
 
 ## Layout

@@ -1,8 +1,8 @@
 """
 app.py - LLM Playground & Evaluation Dashboard for the Assignment 4/5 agents.
 
-Run:  cd lesson4 && streamlit run dashboard/app.py
-Needs OPENAI_API_KEY in lesson4/.env for the Playground and Benchmark tabs;
+Run:  cd lesson5 && streamlit run dashboard/app.py
+Needs OPENAI_API_KEY in lesson5/.env for the Playground and Benchmark tabs;
 the Analytics tab reads Excel results and works without a key.
 """
 
@@ -170,7 +170,7 @@ with tab_benchmark:
 
     start = st.button("🚀 Run benchmark", type="primary",
                       disabled=not ui.api_key_present() or total_runs == 0)
-    st.caption("Results are written to lesson4/benchmark_results/ after every task. "
+    st.caption("Results are written to lesson5/benchmark_results/ after every task. "
                "assignment_04.xlsx and assignment_05.xlsx are never modified.")
 
     if start:

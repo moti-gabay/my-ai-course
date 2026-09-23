@@ -7,7 +7,7 @@ Responsibilities:
   * drive a benchmark subset over eval_runner's evaluators with a progress callback
 
 Nothing here modifies assignment_04.xlsx / assignment_05.xlsx or the original
-JSONL logs; dashboard runs write under lesson4/benchmark_results/.
+JSONL logs; dashboard runs write under lesson5/benchmark_results/.
 """
 
 from __future__ import annotations
