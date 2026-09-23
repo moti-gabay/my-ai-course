@@ -1,7 +1,7 @@
 {
   "model": "claude-sonnet-5",
-  "agreement_cases": "7/8",
-  "agreement_verdicts": "11/12",
+  "agreement_cases": "8/8",
+  "agreement_verdicts": "12/12",
   "cases": [
     {
       "id": "s1_correct_250",
@@ -22,10 +22,10 @@
           "judge": "faithfulness",
           "expected": "supported",
           "verdict": "supported",
-          "explanation": "The answer states the Allstate policy pays up to $250 for bail bonds required because of an accident, provided the accident results in covered bodily injury or property damage. This directly matches the tool output text: 'Up to $250 for the cost of bail bonds required because of any accident... The accident must result in bodily injury or property damage covered under this policy.' All claims are fully supported.",
-          "input_tokens": 1080,
-          "output_tokens": 189,
-          "cached": true,
+          "explanation": "The answer states the $250 bail bond supplementary payment condition, which directly matches tool output [1]: 'Up to $250 for the cost of bail bonds required because of any accident, including related traffic law violations. The accident must result in bodily injury or property damage covered under this policy.' This is fully supported.",
+          "input_tokens": 1128,
+          "output_tokens": 116,
+          "cached": false,
           "agree": true
         }
       ]
@@ -49,10 +49,10 @@
           "judge": "faithfulness",
           "expected": "unsupported",
           "verdict": "unsupported",
-          "explanation": "The tool output states coverage is 'Up to $250 for the cost of bail bonds', but the answer claims 'up to $500', which contradicts the source document.",
-          "input_tokens": 1048,
-          "output_tokens": 71,
-          "cached": true,
+          "explanation": "The tool output clearly states the auto policy pays 'Up to $250 for the cost of bail bonds required because of any accident,' not $500. The answer's claim of $500 contradicts the source, which specifies $250.",
+          "input_tokens": 1096,
+          "output_tokens": 90,
+          "cached": false,
           "agree": true
         }
       ]
@@ -66,10 +66,10 @@
           "judge": "faithfulness",
           "expected": "partially_supported",
           "verdict": "partially_supported",
-          "explanation": "The claim about $250 bail bond coverage is directly supported by the tool output. However, the claim about reimbursing up to $1,000 of attorney fees for related traffic hearings is not mentioned anywhere in the tool output; the document instead mentions $200/day for loss of earnings, not attorney fees, and no $1,000 attorney fee figure appears.",
-          "input_tokens": 1077,
-          "output_tokens": 138,
-          "cached": true,
+          "explanation": "The claim that the policy pays up to $250 for bail bonds after a covered accident is directly supported by tool output [1]. However, the claim about reimbursing up to $1,000 of attorney fees for the related traffic hearing is not mentioned anywhere in the tool output. The tool output only mentions up to $200 a day for loss of earnings due to attendance at hearings, not attorney fees or a $1,000 figure. This claim is unsupported/fabricated.",
+          "input_tokens": 1125,
+          "output_tokens": 172,
+          "cached": false,
           "agree": true
         }
       ]
@@ -93,10 +93,10 @@
           "judge": "faithfulness",
           "expected": "no_claims",
           "verdict": "no_claims",
-          "explanation": "The answer states that no premium information was found in the policy documents, which matches the tool output showing NO_RESULTS (below relevance threshold). The answer makes no additional factual claims beyond acknowledging the absence of information, which is not a factual claim requiring support but rather a statement that information is unavailable.",
-          "input_tokens": 791,
-          "output_tokens": 117,
-          "cached": true,
+          "explanation": "The answer only states that the requested information could not be found in the policy documents, which matches the NO_RESULTS tool output. It makes no specific factual claims about coverage, limits, amounts, or conditions.",
+          "input_tokens": 839,
+          "output_tokens": 85,
+          "cached": false,
           "agree": true
         }
       ]
@@ -120,10 +120,10 @@
           "judge": "faithfulness",
           "expected": "supported",
           "verdict": "supported",
-          "explanation": "The answer states that the policy pays up to $250 for bail bond costs required due to an accident, provided the accident caused bodily injury or property damage covered under the policy. This directly matches item 1 in the tool output: 'Up to $250 for the cost of bail bonds required because of any accident, including related traffic law violations. The accident must result in bodily injury or property damage covered under this policy.' All claims are fully supported.",
-          "input_tokens": 1109,
-          "output_tokens": 152,
-          "cached": true,
+          "explanation": "The answer states the policy pays up to $250 for bail bond costs required due to an accident, provided the accident resulted in bodily injury or property damage covered under the policy. This matches tool output [1] verbatim: 'Up to $250 for the cost of bail bonds required because of any accident... The accident must result in bodily injury or property damage covered under this policy.' This is fully supported.",
+          "input_tokens": 1157,
+          "output_tokens": 141,
+          "cached": false,
           "agree": true
         }
       ]
@@ -148,7 +148,7 @@
     {
       "id": "s7_refusal_with_invented_facts",
       "about": "Team final answer for p2_premium (traces/smoke/phase2_team.jsonl): refuses, but asserts a phone number, a website and credit score as a rating factor with no tool output behind them (0 tool calls).",
-      "agree": false,
+      "agree": true,
       "checks": [
         {
           "judge": "faithfulness",
@@ -156,12 +156,12 @@
             "unsupported",
             "partially_supported"
           ],
-          "verdict": "no_claims",
-          "explanation": "The answer declines to provide a specific figure and explains why, without asserting any verifiable factual claims about coverage, limits, or amounts. Statements like contacting Allstate at a phone number or website are generic suggestions, not factual claims requiring tool support. This is essentially a refusal/explanation of unavailability.",
-          "input_tokens": 904,
-          "output_tokens": 122,
-          "cached": true,
-          "agree": false
+          "verdict": "unsupported",
+          "explanation": "The answer refuses to give a specific premium, which is not a factual claim itself. However, it provides specific factual details: a phone number (1-800-ALLSTATE) and website (allstate.com) for contacting Allstate, as well as general statements about factors affecting premiums (driving history, vehicle type, discounts, credit score). Since no tool calls were made, there are no tool outputs to support any of these claims, including the specific contact information. The phone number and website are specific factual claims presented as fact but have zero support from any tool output.",
+          "input_tokens": 952,
+          "output_tokens": 586,
+          "cached": false,
+          "agree": true
         }
       ]
     },
@@ -174,9 +174,9 @@
           "judge": "faithfulness",
           "expected": "no_claims",
           "verdict": "no_claims",
-          "explanation": "The answer contains no factual claims about coverage, limits, amounts, or conditions; it simply states that the information is unavailable and directs the user to contact the insurer. This is a refusal/unavailability statement, not a factual claim requiring verification against tool outputs.",
-          "input_tokens": 701,
-          "output_tokens": 105,
+          "explanation": "The answer contains no specific factual claims about policy details, coverage, amounts, or company specifics. It simply states that information is unavailable and suggests contacting the insurer, which is a refusal/non-answer rather than an assertion of facts.",
+          "input_tokens": 749,
+          "output_tokens": 97,
           "cached": false,
           "agree": true
         }
