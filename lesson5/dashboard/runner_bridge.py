@@ -284,7 +284,7 @@ def make_error_row(task: Dict[str, Any], run_num: int, config: str, exc: Excepti
         "task": task["task"],
         "type": task.get("type", "single"),
         "answerable": task.get("answerable", True),
-        "success_criteria": task.get("success_criteria", ""),
+        "success_criteria": json.dumps(task.get("success_criteria", ""), ensure_ascii=False),
         "capable_agents": json.dumps(task.get("capable_agents", [])),
         "config": config,
         "run": run_num,

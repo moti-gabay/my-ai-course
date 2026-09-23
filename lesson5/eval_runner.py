@@ -14,6 +14,7 @@ from typing import Dict, Any, List, Optional
 from team import MultiAgentTeam
 from contracts import AgentName, AGENT_SCOPE_CONTRACTS
 from scoring import JUDGE, RunView, evaluate, judge_rubrics
+from tools import set_active_faults, clear_active_faults
 import judge
 
 # יבוא הסוכן הבודד המוקפא מ-agent.py (מטלה 4)
@@ -94,6 +95,7 @@ def evaluate_single_agent_run(agent_instance, task: Dict[str, Any], run_num: int
     """
     start_t = time.time()
     row = _row(task, "single", run_num)
+    faults = set_active_faults(task.get("inject_faults"))  # tool_fails tasks only
     try:
         # הקריאה המודכנת למתודה run_task הקיימת ב-agent.py
         res = agent_instance.run_task(task_data=task, run_number=run_num)
@@ -104,6 +106,8 @@ def evaluate_single_agent_run(agent_instance, task: Dict[str, Any], run_num: int
                 "per_agent_success": json.dumps({"single": False}), "faithfulness": "n/a",
                 "latency_ms": round((time.time() - start_t) * 1000, 2), "input_tokens": 0,
                 "output_tokens": 0, "breach_reason": str(e)}
+    finally:
+        clear_active_faults(faults)
 
     scores = score_run(task, "single", res["final_answer"], res["is_refused"], res["terminal_state"],
                        res.get("tool_outputs", []), None, res.get("tool_calls_count", 0), use_judge)
@@ -142,7 +146,11 @@ def evaluate_team_agent_run(team_instance, task: Dict[str, Any], run_num: int,
     מריץ את המערכת המרובת-סוכנים (Multi-Agent Team)
     """
     start_t = time.time()
-    res = team_instance.run_task(task_id=task["task_id"], user_query=task["task"], run_num=run_num)
+    faults = set_active_faults(task.get("inject_faults"))  # tool_fails tasks only
+    try:
+        res = team_instance.run_task(task_id=task["task_id"], user_query=task["task"], run_num=run_num)
+    finally:
+        clear_active_faults(faults)
     duration_ms = (time.time() - start_t) * 1000
 
     # Routing accuracy: the first agent that handled the request must be in capable_agents.

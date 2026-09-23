@@ -1,0 +1,143 @@
+== 1. schema and composition
+  total 41  cross_domain=8  handoff_stress=2  misroute_bait=4  no_tool=3  single=18  tool_fails=3  unanswerable=3
+
+== 2. evidence quotes on the cited page
+  PASS t01  auto       4       "1. $25,000 for each person, subject to $50,000 for each accident, with respect to bodily i"
+  PASS t02  auto       4       "Up to $250 for the cost of bail bonds required because of any accident, including related "
+  PASS t03  auto       13      "However, the most we will pay for loss to: 1. Any non-owned auto which is a trailer is $1,"
+  PASS t04  embrace    3       "Illness Waiting Period is the fourteen (14) day period of time where the policy's Coverage"
+  PASS t05  embrace    6       "eligible Veterinary Treatment expenses caused by Dental Illness, in excess of the Deductib"
+  PASS t06  nationwide 2       "We will not pay more than seven hundred fifty dollars ($750) in Specialized Diagnostic Tes"
+  PASS t07  travel_fl  20      "You have 90 days from the date of your loss to submit your claim to us, except as otherwis"
+  PASS t08  travel_uk  6       "£10 million £10,000 £20/day up to £300 £75/day up to £750 £2,000 *£50 £50 Nil Nil £50"
+  PASS t09  health     86      "For fast appeals, we must give you our answer within 72 hours after we receive your appeal"
+  PASS t10  flood      § 61.5  "(c) The minimum deductible for policies covering post-FIRM buildings and pre-FIRM building"
+  PASS t11  embrace    7       "The following Orthopedic conditions that occur before the end of the Illness Waiting Perio"
+  PASS t11  nationwide 3       "Diagnosis or treatment of cruciate ligament or meniscal damage or rupture that occurs duri"
+  PASS t12  auto       3       "If a newly acquired auto is in addition to any vehicle shown in the Declarations, you must"
+  PASS t13  auto       4       "B. Insured as used in this Part means: 1. You or any family member for the ownership, main"
+  PASS t14  auto       14      "The Policy Territory is: 1. The United States of America, its territories or possessions; "
+  PASS t15  auto       11      "If the Declarations indicate that Towing And Labor Costs Coverage is provided for a your c"
+  PASS t16  auto       6       "A financial responsibility or similar law specifying limits of liability for bodily injury"
+  PASS t17  auto       4       "Up to $200 a day for loss of earnings, but not other income, because of attendance at hear"
+  PASS t18  flood      § 61.5  "FEMA must provide policyholders with deductible options in various amounts, up to and incl"
+  PASS t19  auto       4       "Up to $250 for the cost of bail bonds required because of any accident, including related "
+  PASS t20  auto       13      "However, the most we will pay for loss to: 1. Any non-owned auto which is a trailer is $1,"
+  PASS t21  nationwide 2       "We will not pay more than seven hundred fifty dollars ($750) in Specialized Diagnostic Tes"
+  PASS t22  auto       15      "If you cancel, we will refund you 90% of the pro rata unearned premium, computed according"
+  PASS t23  embrace    6       "eligible Veterinary Treatment expenses caused by Dental Illness, in excess of the Deductib"
+  PASS t24  flood      § 61.6  "Building Coverage | Single-Family Dwelling | * $35,000 | $250,000."
+  PASS t25  auto       4       "1. $25,000 for each person, subject to $50,000 for each accident, with respect to bodily i"
+  PASS t26  auto       4       "1. $25,000 for each person, subject to $50,000 for each accident, with respect to bodily i"
+  PASS t27  flood      § 61.5  "(c) The minimum deductible for policies covering post-FIRM buildings and pre-FIRM building"
+  PASS t29  embrace    3       "Illness Waiting Period is the fourteen (14) day period of time where the policy's Coverage"
+  PASS t30  nationwide 2       "We will not pay more than seven hundred fifty dollars ($750) in Specialized Diagnostic Tes"
+  PASS t34  auto       4       "Up to $250 for the cost of bail bonds required because of any accident, including related "
+  PASS t35  embrace    3       "Illness Waiting Period is the fourteen (14) day period of time where the policy's Coverage"
+  PASS t39  embrace    6       "eligible Veterinary Treatment expenses caused by Dental Illness, in excess of the Deductib"
+  PASS t40  travel_fl  20      "You have 90 days from the date of your loss to submit your claim to us, except as otherwis"
+  PASS t41  auto       4       "1. $25,000 for each person, subject to $50,000 for each accident, with respect to bodily i"
+
+== 3. predicate amounts are grounded
+  PASS t01  amount 25,000.00
+  PASS t01  amount 50,000.00
+  PASS t01  amount 20,000.00
+  PASS t02  amount 250.00
+  PASS t03  amount 1,500.00
+  PASS t04  amount 14.00
+  PASS t05  amount 1,000.00
+  PASS t06  amount 750.00
+  PASS t07  amount 90.00
+  PASS t08  amount 50.00
+  PASS t09  amount 72.00
+  PASS t10  amount 1,000.00
+  PASS t11  amount 180.00
+  PASS t11  amount 12.00
+  PASS t12  amount 30.00
+  PASS t17  amount 200.00
+  PASS t18  amount 10,000.00
+  PASS t19  amount 750.00
+  PASS t19  calculation input 250 (250 * 3)
+  PASS t19  calculation input 3 (250 * 3)
+  PASS t20  amount 1,500.00
+  PASS t20  amount 800.00
+  PASS t20  calculation input 2300 (2300 - 1500)
+  PASS t20  calculation input 1500 (2300 - 1500)
+  PASS t21  amount 450.00
+  PASS t21  calculation input 1200 (1200 - 750)
+  PASS t21  calculation input 750 (1200 - 750)
+  PASS t22  amount 540.00
+  PASS t22  calculation input 1200 (1200 * 0.5 * 0.9)
+  PASS t22  calculation input 0.5 (1200 * 0.5 * 0.9)
+  PASS t22  calculation input 0.9 (1200 * 0.5 * 0.9)
+  PASS t23  amount 300.00
+  PASS t23  calculation input 700 (700 + 600 - 1000)
+  PASS t23  calculation input 600 (700 + 600 - 1000)
+  PASS t23  calculation input 1000 (700 + 600 - 1000)
+  PASS t24  amount 70,000.00
+  PASS t24  calculation input 320000 (320000 - 250000)
+  PASS t24  calculation input 250000 (320000 - 250000)
+  PASS t25  amount 50,000.00
+  PASS t25  calculation input 3 (3 * 25000, then capped at 50000 per accident)
+  PASS t25  calculation input 25000 (3 * 25000, then capped at 50000 per accident)
+  PASS t25  calculation input 50000 (3 * 25000, then capped at 50000 per accident)
+  PASS t26  amount 7,000.00
+  PASS t26  calculation input 12000 (12000 + 15000 - 20000)
+  PASS t26  calculation input 15000 (12000 + 15000 - 20000)
+  PASS t26  calculation input 20000 (12000 + 15000 - 20000)
+  PASS t27  amount 1,000.00
+  PASS t28  amount 2,160.00
+  PASS t28  amount 14,160.00
+  PASS t28  calculation input 12000 (12000 * 0.18)
+  PASS t28  calculation input 0.18 (12000 * 0.18)
+  PASS t28  calculation input 12000 (12000 * 1.18)
+  PASS t28  calculation input 1.18 (12000 * 1.18)
+  PASS t29  amount 14.00
+  PASS t30  amount 750.00
+  PASS t34  amount 250.00
+  PASS t35  amount 14.00
+
+== 4. reference answer passes its own predicate
+  PASS t01  single          -> True
+  PASS t02  single          -> True
+  PASS t03  single          -> True
+  PASS t04  single          -> True
+  PASS t05  single          -> True
+  PASS t06  single          -> True
+  PASS t07  single          -> True
+  PASS t08  single          -> True
+  PASS t09  single          -> True
+  PASS t10  single          -> True
+  PASS t11  single          -> judge
+  PASS t12  single          -> True
+  PASS t13  single          -> judge
+  PASS t14  single          -> True
+  PASS t15  single          -> judge
+  PASS t16  single          -> judge
+  PASS t17  single          -> True
+  PASS t18  single          -> True
+  PASS t19  cross_domain    -> True
+  PASS t20  cross_domain    -> True
+  PASS t21  cross_domain    -> True
+  PASS t22  cross_domain    -> True
+  PASS t23  cross_domain    -> True
+  PASS t24  cross_domain    -> True
+  PASS t25  cross_domain    -> True
+  PASS t26  cross_domain    -> True
+  PASS t27  misroute_bait   -> True
+  PASS t28  misroute_bait   -> True
+  PASS t29  misroute_bait   -> True
+  PASS t30  misroute_bait   -> True
+  PASS t31  no_tool         -> True
+  PASS t32  no_tool         -> judge
+  PASS t33  no_tool         -> True
+  PASS t34  handoff_stress  -> True
+  PASS t35  handoff_stress  -> True
+  PASS t36  unanswerable    -> True
+  PASS t37  unanswerable    -> True
+  PASS t38  unanswerable    -> True
+  PASS t39  tool_fails      -> True
+  PASS t40  tool_fails      -> True
+  PASS t41  tool_fails      -> True
+
+0 failure(s)
