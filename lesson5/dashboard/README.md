@@ -10,7 +10,7 @@ cd lesson5                              # venv setup: see ../README_SETUP.md
 .venv/bin/streamlit run dashboard/app.py
 ```
 
-`OPENAI_API_KEY` is read from `lesson5/.env` (loaded by `agent.py` / `team.py`).
+`ANTHROPIC_API_KEY` is read from `lesson5/.env` (loaded by `agent.py` / `team.py`).
 Without a key the Playground and Benchmark tabs are disabled; **Analytics still works**,
 since it only reads Excel files.
 

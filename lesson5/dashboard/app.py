@@ -2,7 +2,7 @@
 app.py - LLM Playground & Evaluation Dashboard for the Assignment 4/5 agents.
 
 Run:  cd lesson5 && streamlit run dashboard/app.py
-Needs OPENAI_API_KEY in lesson5/.env for the Playground and Benchmark tabs;
+Needs ANTHROPIC_API_KEY in lesson5/.env for the Playground and Benchmark tabs;
 the Analytics tab reads Excel results and works without a key.
 """
 

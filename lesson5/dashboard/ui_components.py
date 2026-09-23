@@ -15,7 +15,7 @@ import streamlit as st
 from .runner_bridge import RunConfig, AGENT_SYSTEM_PROMPT
 from .analytics import TASK_TYPE_ORDER
 
-MODEL_CHOICES = ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"]
+MODEL_CHOICES = ["claude-haiku-4-5", "claude-sonnet-5"]
 
 # Validated categorical palette, assigned to configs in fixed order (never cycled,
 # never re-assigned when a filter drops a series).
@@ -35,7 +35,7 @@ AGENT_ICONS = {
 
 
 def api_key_present() -> bool:
-    return bool(os.environ.get("OPENAI_API_KEY"))
+    return bool(os.environ.get("ANTHROPIC_API_KEY"))
 
 
 # ---------------------------------------------------------------------------
@@ -48,9 +48,9 @@ def render_sidebar(default_agents_md: str) -> RunConfig:
     sb.title("⚙️ Configuration")
 
     if api_key_present():
-        sb.caption("✅ OPENAI_API_KEY loaded from lesson5/.env")
+        sb.caption("✅ ANTHROPIC_API_KEY loaded from lesson5/.env")
     else:
-        sb.error("No OPENAI_API_KEY. Playground and Benchmark are disabled; Analytics still works.")
+        sb.error("No ANTHROPIC_API_KEY. Playground and Benchmark are disabled; Analytics still works.")
 
     mode = sb.radio(
         "Mode",

@@ -47,7 +47,7 @@ StepEvent = Dict[str, Any]
 @dataclass(frozen=True)
 class RunConfig:
     mode: str = "single"                 # "single" | "team" | "both"
-    model_name: str = "gpt-4o-mini"
+    model_name: str = "claude-haiku-4-5"
     temperature: float = 0.0
     # single agent
     max_iterations: int = 10

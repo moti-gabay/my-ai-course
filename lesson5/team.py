@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).with_name(".env"))
 
 from pydantic import BaseModel, Field
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
 from langgraph.prebuilt import create_react_agent
 from langgraph.graph import StateGraph, END
@@ -25,6 +25,7 @@ from contracts import (
     AgentName, HandoffPayload, Handoff, TeamState, AGENT_SCOPE_CONTRACTS
 )
 from tools import ALL_TOOLS, search_docs, calculator, read_policy_page
+import retriever
 
 # ---------------------------------------------------------------------------
 # 1. JSONL Unit-of-Work Tracer
@@ -145,7 +146,7 @@ def create_agent_compat(llm, tools, prompt_text):
 class MultiAgentTeam:
     def __init__(
         self, 
-        model_name: str = "gpt-4o-mini",
+        model_name: str = "claude-haiku-4-5",
         procedural_memory_path: str = "AGENTS.md",
         temperature: float = 0.0,
         procedural_memory_text: Optional[str] = None,
@@ -155,7 +156,9 @@ class MultiAgentTeam:
         log_file: str = "team_execution_traces.jsonl",
         on_event: Optional[Callable[[Dict[str, Any]], None]] = None
     ):
-        self.llm = ChatOpenAI(model=model_name, temperature=temperature, request_timeout=30.0)
+        self.llm = ChatAnthropic(model=model_name, temperature=temperature, timeout=30.0, max_tokens=2048)
+        # Load embeddings, index and reranker now so model loading never counts as run latency.
+        retriever.warm_up()
         self.tracer = UnitOfWorkTracer(log_file=log_file, on_event=on_event)
         self.safety_nets = SafetyNetChecker(
             max_turns=max_turns,

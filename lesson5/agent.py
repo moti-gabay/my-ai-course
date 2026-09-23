@@ -3,10 +3,11 @@ import json
 import uuid
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Callable
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
 from dotenv import load_dotenv
 from tools import ALL_TOOLS
+import retriever
 from langgraph.prebuilt import create_react_agent
 
 # טעינת מפתחות ה-API מקובץ ה-.env שליד הסקריפט
@@ -30,7 +31,7 @@ Instructions:
 class LangGraphAgentRunner:
     def __init__(
         self,
-        model_name: str = "gpt-4o-mini",
+        model_name: str = "claude-haiku-4-5",
         max_iterations: int = 10,
         timeout_seconds: float = 30.0,
         log_file: str = "agent_execution_logs.jsonl",
@@ -45,8 +46,11 @@ class LangGraphAgentRunner:
         self.system_prompt = system_prompt or AGENT_SYSTEM_PROMPT
 
         # אתחול המודל עם תיוג Token usage
-        self.llm = ChatOpenAI(model=model_name, temperature=temperature,request_timeout=self.timeout_seconds)
+        self.llm = ChatAnthropic(model=model_name, temperature=temperature, timeout=self.timeout_seconds, max_tokens=2048)
         
+        # Load embeddings, index and reranker now so model loading never counts as run latency.
+        retriever.warm_up()
+
         # יצירת ה-Agent של LangGraph
         self.graph = create_react_agent(
             model=self.llm,
@@ -109,10 +113,9 @@ class LangGraphAgentRunner:
 
                 # תיעוד קריאות לכלים ולמידת Token Usage
                 if isinstance(last_msg, AIMessage):
-                    if hasattr(last_msg, "response_metadata") and "token_usage" in last_msg.response_metadata:
-                        usage = last_msg.response_metadata["token_usage"]
-                        prompt_tokens += usage.get("prompt_tokens", 0)
-                        completion_tokens += usage.get("completion_tokens", 0)
+                    usage = last_msg.usage_metadata or {}
+                    prompt_tokens += usage.get("input_tokens", 0)
+                    completion_tokens += usage.get("output_tokens", 0)
 
                     if last_msg.tool_calls:
                         for tc in last_msg.tool_calls:
