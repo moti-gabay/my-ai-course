@@ -183,11 +183,12 @@ cross("t19", "I was in three separate covered accidents this policy period and n
              "What is the most my auto policy will pay for bail bonds in total?",
       "Up to $250 per accident, so at most 3 x $250 = ${result:,.0f}.", "250 * 3", lambda r: [r], [BAIL])
 cross("t20", "I damaged a trailer I borrowed (I don't own it) and the repair is $2,300. What's the most my auto "
-             "policy pays for it, and how much is left for me to cover?",
+             "policy pays for it, and how much of the repair is above that cap? Ignore any deductible.",
       "The policy pays at most $1,500 for a non-owned trailer, leaving $2,300 - $1,500 = ${result:,.0f}.",
       "2300 - 1500", lambda r: [1500, r], [TRAILER])
 cross("t21", "My vet ran specialized diagnostic tests costing $1,200 this policy term under my Nationwide plan. "
-             "How much of that is above what the plan will pay for those tests?",
+             "How much of that is above the plan's per-term cap for those tests? Ignore the deductible and "
+             "reimbursement percentage.",
       "The plan pays no more than $750 per policy term, so $1,200 - $750 = ${result:,.0f} is above the cap.",
       "1200 - 750", lambda r: [r], [NW_DIAG])
 cross("t22", "My annual Allstate auto premium is $1,200. If I cancel the policy myself with exactly half of the "
@@ -195,7 +196,7 @@ cross("t22", "My annual Allstate auto premium is $1,200. If I cancel the policy 
       "Unearned premium is $600 pro rata; if you cancel you get 90% of it: 0.9 x $600 = ${result:,.0f} "
       "(computed according to the insurer's manuals).", "1200 * 0.5 * 0.9", lambda r: [r], [REFUND])
 cross("t23", "My dog had two dental illness treatments this policy year, $700 and $600. By how much does that total "
-             "exceed Embrace's annual limit for dental illness?",
+             "exceed Embrace's annual limit for dental illness? Ignore the deductible and reimbursement percentage.",
       "Dental illness has a $1,000 Annual Maximum sub-limit; $700 + $600 = $1,300, which is ${result:,.0f} over it.",
       "700 + 600 - 1000", lambda r: [r], [EMBRACE_DENTAL])
 cross("t24", "My single-family home would cost $320,000 to rebuild. Under the NFIP regular program, how much of that "

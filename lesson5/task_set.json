@@ -526,7 +526,7 @@
   {
     "task_id": "t20",
     "type": "cross_domain",
-    "task": "I damaged a trailer I borrowed (I don't own it) and the repair is $2,300. What's the most my auto policy pays for it, and how much is left for me to cover?",
+    "task": "I damaged a trailer I borrowed (I don't own it) and the repair is $2,300. What's the most my auto policy pays for it, and how much of the repair is above that cap? Ignore any deductible.",
     "answerable": true,
     "success_criteria": {
       "all": [
@@ -562,7 +562,7 @@
   {
     "task_id": "t21",
     "type": "cross_domain",
-    "task": "My vet ran specialized diagnostic tests costing $1,200 this policy term under my Nationwide plan. How much of that is above what the plan will pay for those tests?",
+    "task": "My vet ran specialized diagnostic tests costing $1,200 this policy term under my Nationwide plan. How much of that is above the plan's per-term cap for those tests? Ignore the deductible and reimbursement percentage.",
     "answerable": true,
     "success_criteria": {
       "all": [
@@ -628,7 +628,7 @@
   {
     "task_id": "t23",
     "type": "cross_domain",
-    "task": "My dog had two dental illness treatments this policy year, $700 and $600. By how much does that total exceed Embrace's annual limit for dental illness?",
+    "task": "My dog had two dental illness treatments this policy year, $700 and $600. By how much does that total exceed Embrace's annual limit for dental illness? Ignore the deductible and reimbursement percentage.",
     "answerable": true,
     "success_criteria": {
       "all": [
