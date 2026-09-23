@@ -1,13 +1,11 @@
 import time
-import json
-import uuid
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Callable
+from typing import Dict, Any, Optional, Callable
 from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
 from dotenv import load_dotenv
 from tools import ALL_TOOLS
 import retriever
+from tracing import UnitOfWorkTracer, run_traced_react
 from langgraph.prebuilt import create_react_agent
 
 # טעינת מפתחות ה-API מקובץ ה-.env שליד הסקריפט
@@ -34,7 +32,7 @@ class LangGraphAgentRunner:
         model_name: str = "claude-haiku-4-5",
         max_iterations: int = 10,
         timeout_seconds: float = 30.0,
-        log_file: str = "agent_execution_logs.jsonl",
+        log_file: str = str(Path(__file__).with_name("traces") / "single_traces.jsonl"),
         temperature: float = 0.0,
         system_prompt: Optional[str] = None
     ):
@@ -66,130 +64,79 @@ class LangGraphAgentRunner:
     ) -> Dict[str, Any]:
         """
         מריץ משימה יחידה דרך ה-LangGraph Agent עם מדידת זמנים, ניטור טוקנים, וחישוב מטריקות.
+        Traces go through the same UnitOfWorkTracer events as the team (agent="single").
         """
         task_id = task_data.get("task_id", "unknown")
         user_query = task_data.get("task", "")
-        task_type = task_data.get("type", "single")
-
         start_time = time.time()
-        run_id = str(uuid.uuid4())[:8]
+        rt = UnitOfWorkTracer(self.log_file, on_event=on_step).start_run(task_id, run_number)
 
-        inputs = {"messages": [HumanMessage(content=user_query)]}
-        
+        def check() -> Optional[str]:
+            if time.time() - start_time > self.timeout_seconds:
+                return "wall_clock_timeout"
+            return None
+
         # הגדרת Recursion limit לבטיחות
-        config = {
-            "recursion_limit": self.max_iterations * 2 + 1
-        }
-
-        trace_steps = []
-        tool_calls_count = 0
-        used_tools = []
-        prompt_tokens = 0
-        completion_tokens = 0
-        final_text = ""
-        status = "success"
-        error_message = None
-
-        def _emit(step: Dict[str, Any]):
-            trace_steps.append(step)
-            if on_step:
-                on_step(step)
-
-        try:
-            # הרצת ה-Graph בדרייבר Stream לצורך מעקב צעד-אחר-צעד ואיסוף מטריקות
-            for event in self.graph.stream(inputs, config=config, stream_mode="values"):
-                # בדיקת Timeout שומר סף (Wall-clock timeout)
-                elapsed = time.time() - start_time
-                if elapsed > self.timeout_seconds:
-                    status = "timeout_exceeded"
-                    error_message = f"Execution exceeded wall-clock limit of {self.timeout_seconds} seconds."
-                    break
-
-                messages = event.get("messages", [])
-                if not messages:
-                    continue
-
-                last_msg = messages[-1]
-
-                # תיעוד קריאות לכלים ולמידת Token Usage
-                if isinstance(last_msg, AIMessage):
-                    usage = last_msg.usage_metadata or {}
-                    prompt_tokens += usage.get("input_tokens", 0)
-                    completion_tokens += usage.get("output_tokens", 0)
-
-                    if last_msg.tool_calls:
-                        for tc in last_msg.tool_calls:
-                            tool_calls_count += 1
-                            used_tools.append(tc["name"])
-                            _emit({
-                                "step": "tool_call",
-                                "tool": tc["name"],
-                                "args": tc["args"]
-                            })
-                    else:
-                        final_text = last_msg.content
-
-                elif isinstance(last_msg, ToolMessage):
-                    _emit({
-                        "step": "tool_result",
-                        "tool": last_msg.name,
-                        "content": str(last_msg.content)[:300]  # קיצור למניעת לוג נפוח
-                    })
-
-        except Exception as e:
-            if "Recursion limit" in str(e):
-                status = "max_iterations_exceeded"
-                error_message = f"Agent exceeded maximum allowed iterations ({self.max_iterations})."
-            else:
-                status = "execution_error"
-                error_message = f"Runtime error: {str(e)}"
-            
-            final_text = f"ERROR: Task execution stopped due to: {error_message}"
-
-        if on_step:
-            on_step({
-                "step": "final",
-                "content": final_text,
-                "status": status,
-                "error_message": error_message
-            })
-
+        outcome = run_traced_react(self.graph, user_query, rt, "single", check=check,
+                                   config={"recursion_limit": self.max_iterations * 2 + 1})
         latency = time.time() - start_time
+        rt.account("single", duration_ms=round(latency * 1000, 1), turns=1)
+
+        if outcome.breach:
+            status, terminal_state, breach_reason = "timeout_exceeded", "cap_breached", outcome.breach
+            error_message = f"Execution exceeded wall-clock limit of {self.timeout_seconds} seconds."
+        elif outcome.error and "Recursion limit" in outcome.error:
+            status, terminal_state, breach_reason = "max_iterations_exceeded", "cap_breached", "max_iterations"
+            error_message = f"Agent exceeded maximum allowed iterations ({self.max_iterations})."
+        elif outcome.error:
+            status, terminal_state, breach_reason = "execution_error", "error", outcome.error
+            error_message = f"Runtime error: {outcome.error}"
+        else:
+            status, terminal_state, breach_reason, error_message = "success", "answered", None, None
+        if outcome.breach or outcome.error:
+            rt.emit("single", "net_breach" if terminal_state == "cap_breached" else "error",
+                    owner="single", reason=breach_reason)
+        final_text = outcome.text if status == "success" else f"ERROR: Task execution stopped due to: {error_message}"
 
         # זיהוי האם התגובה היא סירוב (Refusal detection)
         refusal_keywords = ["cannot answer", "not mentioned", "unavailable", "refuse", "do not have", "failed", "restricted"]
         is_refused = any(kw in final_text.lower() for kw in refusal_keywords) or not task_data.get("answerable", True)
 
-        # הרכבת אובייקט התיעוד המלא
-        log_entry = {
-            "run_id": run_id,
+        totals = rt.totals()
+        rt.summary(
+            terminal_state=terminal_state,
+            breach_reason=breach_reason,
+            route=["single"],
+            route_history=["single"],
+            agent_turns=1,
+            input_tokens=totals["input_tokens"],
+            output_tokens=totals["output_tokens"],
+            total_tokens=totals["input_tokens"] + totals["output_tokens"],
+            tool_calls=totals["tool_calls"],
+            duration_ms=round(latency * 1000, 1),
+            final_answer=final_text,
+        )
+
+        return {
             "task_id": task_id,
-            "task_type": task_type,
+            "task_type": task_data.get("type", "single"),
             "run_number": run_number,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
             "status": status,
+            "terminal_state": terminal_state,
+            "breach_reason": breach_reason,
             "error_message": error_message,
             "latency_seconds": round(latency, 4),
-            "total_tokens": prompt_tokens + completion_tokens,
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": completion_tokens,
-            "tool_calls_count": tool_calls_count,
-            "used_tools": list(set(used_tools)),
+            "total_tokens": totals["input_tokens"] + totals["output_tokens"],
+            "prompt_tokens": totals["input_tokens"],
+            "completion_tokens": totals["output_tokens"],
+            "tool_calls_count": totals["tool_calls"],
+            "used_tools": sorted({t["tool"] for t in outcome.tool_outputs}),
+            "tool_outputs": outcome.tool_outputs,
+            "per_agent": rt.per_agent,
             "is_refused": is_refused,
             "user_query": user_query,
             "final_answer": final_text,
-            "trace_steps": trace_steps
         }
-
-        # שמירה לקובץ JSONL
-        self._write_jsonl(log_entry)
-
-        return log_entry
-
-    def _write_jsonl(self, data: Dict[str, Any]):
-        """כותב שורת לוג לקובץ JSONL."""
-        with open(self.log_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps(data, ensure_ascii=False) + "\n")
 
 
 # ---------------------------------------------------------------------------
@@ -197,18 +144,6 @@ class LangGraphAgentRunner:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     runner = LangGraphAgentRunner(max_iterations=10, timeout_seconds=30.0)
-    
-    test_task = {
-        "task_id": "t01",
-        "task": "If I have a claim for $12,000 for building damage and my deductible is $1,000, what amount will the insurer pay after deductible and 18% VAT?",
-        "type": "multi_hop",
-        "answerable": True
-    }
-
-    print("--- Testing LangGraph Agent Runner ---")
-    res = runner.run_task(test_task, run_number=1)
-    print(f"Status: {res['status']}")
-    print(f"Latency: {res['latency_seconds']}s | Tokens: {res['total_tokens']} | Tool Calls: {res['tool_calls_count']}")
+    res = runner.run_task({"task_id": "smoke", "task": "How much will the auto insurer pay for bail bonds after a covered accident?"})
+    print(f"Status: {res['status']} | Latency: {res['latency_seconds']}s | Tokens: {res['total_tokens']} | Tool Calls: {res['tool_calls_count']}")
     print(f"Final Answer:\n{res['final_answer']}")
-
-    

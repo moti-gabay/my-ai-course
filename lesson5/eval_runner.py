@@ -67,7 +67,6 @@ def evaluate_single_agent_run(agent_instance, task: Dict[str, Any], run_num: int
         
         answer = res.get("final_answer", "")
         refused = res.get("is_refused", False)
-        status = res.get("status", "success")
         
         # חישוב הצלחה לפי תקינות התשובה והסירוב
         success = not refused if task.get("answerable", True) else refused
@@ -84,7 +83,7 @@ def evaluate_single_agent_run(agent_instance, task: Dict[str, Any], run_num: int
             "answer": answer,
             "success": success,
             "refused": refused,
-            "terminal_state": status,
+            "terminal_state": res.get("terminal_state"),
             "route": json.dumps(["single_agent"]),
             "agent_turns": 1,
             "tool_calls": res.get("tool_calls_count", 0),
@@ -95,7 +94,7 @@ def evaluate_single_agent_run(agent_instance, task: Dict[str, Any], run_num: int
             "latency_ms": round(res.get("latency_seconds", 0) * 1000, 2),
             "input_tokens": res.get("prompt_tokens", 0),
             "output_tokens": res.get("completion_tokens", 0),
-            "breach_reason": res.get("error_message") or "None"
+            "breach_reason": res.get("breach_reason") or "None"
         }
     except Exception as e:
         return {
@@ -136,8 +135,8 @@ def evaluate_team_agent_run(team_instance, task: Dict[str, Any], run_num: int) -
     duration_ms = (time.time() - start_t) * 1000
     
     answer = res["final_answer"]
-    route_history = res["route_history"]
-    first_worker = route_history[1] if len(route_history) > 1 else "orchestrator"
+    route = res["route"]
+    first_worker = route[0] if route else "orchestrator"
     
     # בדיקת דיוק נתוב (Routing Accuracy)
     capable_agents = task.get("capable_agents", [])
@@ -158,18 +157,18 @@ def evaluate_team_agent_run(team_instance, task: Dict[str, Any], run_num: int) -
         "answer": answer,
         "success": success,
         "refused": refused,
-        "terminal_state": res["terminal_state"] or "answered",
-        "route": json.dumps(route_history),
+        "terminal_state": res["terminal_state"],
+        "route": json.dumps(route),
         "agent_turns": res["worker_turns"],
-        "tool_calls": max(1, res["worker_turns"]),
+        "tool_calls": res["tool_calls"],
         "routing_correct": routing_correct,
         "handoff_correct": True,
-        "per_agent_success": json.dumps({agent: True for agent in set(route_history)}),
+        "per_agent_success": json.dumps({agent: True for agent in set(res["route_history"])}),
         "faithfulness": "High" if success else "Low",
         "latency_ms": round(duration_ms, 2),
-        "input_tokens": int(res["total_tokens"] * 0.75),
-        "output_tokens": int(res["total_tokens"] * 0.25),
-        "breach_reason": res["terminal_state"] if "breached" in str(res["terminal_state"]) else "None"
+        "input_tokens": res["input_tokens"],
+        "output_tokens": res["output_tokens"],
+        "breach_reason": res["breach_reason"] or "None"
     }
 
 
@@ -210,7 +209,10 @@ def run_benchmark(output_excel: str = "assignment_05.xlsx", runs_per_task: int =
             success_rate=("success", "mean"),
             refusal_rate=("refused", "mean"),
             latency_p50=("latency_ms", "median"),
-            avg_tokens=("input_tokens", "mean"),
+            latency_p95=("latency_ms", lambda s: s.quantile(0.95)),
+            avg_input_tokens=("input_tokens", "mean"),
+            avg_output_tokens=("output_tokens", "mean"),
+            avg_tool_calls=("tool_calls", "mean"),
             avg_turns=("agent_turns", "mean")
         ).reset_index()
         

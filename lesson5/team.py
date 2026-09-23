@@ -7,18 +7,16 @@ import os
 import time
 import json
 import inspect
-from typing import Dict, Any, List, Optional, Callable
+from typing import Dict, Any, List, Optional, Callable, Tuple
 from pathlib import Path
 from dotenv import load_dotenv
 
 # load environment variables
 load_dotenv(Path(__file__).with_name(".env"))
 
-from pydantic import BaseModel, Field
 from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.prebuilt import create_react_agent
-from langgraph.graph import StateGraph, END
 
 # Import Contracts & Tools
 from contracts import (
@@ -26,104 +24,57 @@ from contracts import (
 )
 from tools import ALL_TOOLS, search_docs, calculator, read_policy_page
 import retriever
+from tracing import UnitOfWorkTracer, RunTrace, ReactOutcome, run_traced_react
 
-# ---------------------------------------------------------------------------
-# 1. JSONL Unit-of-Work Tracer
-# ---------------------------------------------------------------------------
-
-class UnitOfWorkTracer:
-    def __init__(
-        self,
-        log_file: str = "team_execution_traces.jsonl",
-        on_event: Optional[Callable[[Dict[str, Any]], None]] = None
-    ):
-        self.log_file = log_file
-        self.on_event = on_event
-
-    def log_event(self, task_id: str, run_num: int, seq: int, agent: str, 
-                  event: str, owner: str, duration_ms: float, 
-                  input_tokens: int = 0, output_tokens: int = 0, **extra):
-        log_entry = {
-            "task_id": task_id,
-            "run": run_num,
-            "seq": seq,
-            "agent": agent,
-            "event": event,
-            "owner": owner,
-            "duration_ms": round(duration_ms, 2),
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens,
-            **extra
-        }
-        with open(self.log_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
-        if self.on_event:
-            self.on_event(log_entry)
-
-    def log_summary(self, task_id: str, run_num: int, terminal_state: str, 
-                    total_turns: int, total_duration_sec: float, 
-                    total_tokens: int, route_history: List[str]):
-        summary_entry = {
-            "event_type": "summary",
-            "task_id": task_id,
-            "run": run_num,
-            "terminal_state": terminal_state,
-            "total_turns": total_turns,
-            "duration_sec": round(total_duration_sec, 3),
-            "total_tokens": total_tokens,
-            "route_history": route_history
-        }
-        with open(self.log_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps(summary_entry, ensure_ascii=False) + "\n")
-        if self.on_event:
-            self.on_event(summary_entry)
+DEFAULT_TEAM_LOG = str(Path(__file__).with_name("traces") / "team_traces.jsonl")
+WORKERS = (AgentName.RESEARCHER.value, AgentName.ANALYST.value, AgentName.WRITER.value)
 
 
 # ---------------------------------------------------------------------------
-# 2. Safety Nets Checker
+# 1. Safety Nets
 # ---------------------------------------------------------------------------
+
+def detect_loop(workers: List[str]) -> bool:
+    """The same worker pair twice in a row: R,A,R,A (ping-pong) or R,R,R,R.
+
+    Compares the worker-only route. The orchestrator sits between every worker turn,
+    so a route that includes it never repeats a pair and the check never fires.
+    """
+    return len(workers) >= 4 and workers[-2:] == workers[-4:-2]
+
 
 class SafetyNetChecker:
     def __init__(
-        self, 
-        max_turns: int = 8, 
-        max_tokens: int = 12000, 
+        self,
+        max_turns: int = 8,
+        max_tokens: int = 12000,
         timeout_seconds: float = 45.0
     ):
         self.max_turns = max_turns
         self.max_tokens = max_tokens
         self.timeout_seconds = timeout_seconds
 
-    def check_breaches(
-        self, 
-        state: TeamState, 
-        start_time: float, 
-        accumulated_tokens: int
-    ) -> Optional[str]:
-        # 1. Max Agent Turns Net
-        if state.get("agent_turns_count", 0) >= self.max_turns:
-            return "cap_breached: max_turns_exceeded"
-
-        # 2. Token Budget Net
-        if accumulated_tokens >= self.max_tokens:
-            return "cap_breached: token_budget_exceeded"
-
-        # 3. Wall-Clock Timeout Net
+    def budget_breach(self, tokens_used: int, start_time: float) -> Optional[str]:
+        """Token budget and wall-clock nets. Checked before every orchestrator call
+        and after every step inside a worker."""
+        if tokens_used >= self.max_tokens:
+            return "token_budget"
         if (time.time() - start_time) >= self.timeout_seconds:
-            return "cap_breached: wall_clock_timeout"
+            return "wall_clock_timeout"
+        return None
 
-        # 4. Loop Detection Net (🆕)
-        history = state.get("route_history", [])
-        if len(history) >= 4:
-            # Detect immediate repeating pairs: e.g. ['researcher', 'analyst', 'researcher', 'analyst']
-            if history[-4:-2] == history[-2:]:
-                return "loop_detected: repeating_agent_pair"
-
+    def dispatch_breach(self, workers: List[str], next_worker: str) -> Optional[Tuple[str, str]]:
+        """Turn cap and loop nets, checked before a dispatch runs.
+        Returns (terminal_state, breach_reason)."""
+        if len(workers) >= self.max_turns:
+            return "cap_breached", "max_turns"
+        if detect_loop(workers + [next_worker]):
+            return "loop_detected", "repeating_agent_pair"
         return None
 
 
 # ---------------------------------------------------------------------------
-# 3. Helpers for Dynamic LangGraph Version Compatibility
+# 2. Helpers for Dynamic LangGraph Version Compatibility
 # ---------------------------------------------------------------------------
 
 def create_agent_compat(llm, tools, prompt_text):
@@ -140,12 +91,12 @@ def create_agent_compat(llm, tools, prompt_text):
 
 
 # ---------------------------------------------------------------------------
-# 4. Multi-Agent Team Core Implementation
+# 3. Multi-Agent Team Core Implementation
 # ---------------------------------------------------------------------------
 
 class MultiAgentTeam:
     def __init__(
-        self, 
+        self,
         model_name: str = "claude-haiku-4-5",
         procedural_memory_path: str = "AGENTS.md",
         temperature: float = 0.0,
@@ -153,7 +104,7 @@ class MultiAgentTeam:
         max_turns: int = 8,
         max_tokens: int = 12000,
         timeout_seconds: float = 45.0,
-        log_file: str = "team_execution_traces.jsonl",
+        log_file: str = DEFAULT_TEAM_LOG,
         on_event: Optional[Callable[[Dict[str, Any]], None]] = None
     ):
         self.llm = ChatAnthropic(model=model_name, temperature=temperature, timeout=30.0, max_tokens=2048)
@@ -190,9 +141,10 @@ class MultiAgentTeam:
         wri_scope = AGENT_SCOPE_CONTRACTS[AgentName.WRITER]
         self.writer_prompt = f"{wri_scope['scope']}\n\nHouse Rules:\n{self.procedural_memory}"
 
-    def orchestrator_step(self, state: TeamState, run_num: int = 1) -> Handoff:
+    def orchestrator_step(self, state: TeamState, run_num: int = 1) -> Tuple[Optional[Handoff], Dict[str, int], Optional[str], Any]:
         """
         Orchestrator node: Classifies, routes, or directly answers no_tool queries.
+        Returns (handoff or None, token usage, error message or None, raw tool-call args for the trace).
         """
         user_query = state["user_query"]
         last_handoff = state.get("handoff_data") or {}
@@ -214,153 +166,195 @@ CRITICAL ROUTING RULES:
 - NEVER route back to 'researcher' if policy facts are already present in Payload Facts!
 - Do NOT loop infinitely between workers."""
 
-        router_llm = self.llm.with_structured_output(Handoff, method="function_calling")
+        router_llm = self.llm.with_structured_output(Handoff, method="function_calling", include_raw=True)
         messages = [
             SystemMessage(content=orch_system_prompt),
             HumanMessage(content=f"User Query: {user_query}")
         ]
-        
-        handoff_decision = router_llm.invoke(messages)
-        return handoff_decision
+
+        try:
+            res = router_llm.invoke(messages)
+        except Exception as e:
+            return None, {}, f"{type(e).__name__}: {e}", None
+        raw = res.get("raw")
+        usage = (raw.usage_metadata or {}) if raw is not None else {}
+        raw_args = [tc["args"] for tc in raw.tool_calls] if raw is not None else None
+        if res.get("parsing_error") or res.get("parsed") is None:
+            return None, usage, f"orchestrator output did not parse: {res.get('parsing_error')}", raw_args
+        return res["parsed"], usage, None, raw_args
+
+    def _run_writer(self, query: str, rt: RunTrace) -> ReactOutcome:
+        out = ReactOutcome()
+        t0 = time.time()
+        try:
+            msg = self.llm.invoke([SystemMessage(content=self.writer_prompt), HumanMessage(content=query)])
+        except Exception as e:
+            out.error = f"{type(e).__name__}: {e}"
+            return out
+        usage = msg.usage_metadata or {}
+        out.text = msg.text
+        out.input_tokens, out.output_tokens = usage.get("input_tokens", 0), usage.get("output_tokens", 0)
+        rt.account(AgentName.WRITER.value, input_tokens=out.input_tokens, output_tokens=out.output_tokens)
+        rt.emit(AgentName.WRITER.value, "llm_call", owner=AgentName.WRITER.value,
+                duration_ms=round((time.time() - t0) * 1000, 1),
+                input_tokens=out.input_tokens, output_tokens=out.output_tokens,
+                requested_tools=[], text=out.text)
+        return out
 
     def run_task(self, task_id: str, user_query: str, run_num: int = 1) -> Dict[str, Any]:
         """
         Main Execution Loop for Multi-Agent Task Orchestration
         """
         start_time = time.time()
-        seq = 0
-        total_tokens = 0
+        rt = self.tracer.start_run(task_id, run_num)
+        orch = AgentName.ORCHESTRATOR.value
+
+        def tokens_used() -> int:
+            t = rt.totals()
+            return t["input_tokens"] + t["output_tokens"]
 
         # Initialize State
         state: TeamState = {
             "messages": [{"role": "user", "content": user_query}],
             "task_id": task_id,
             "user_query": user_query,
-            "last_active": AgentName.ORCHESTRATOR.value,
+            "last_active": orch,
             "handoff_data": None,
             "agent_turns_count": 0,
-            "route_history": [AgentName.ORCHESTRATOR.value],
+            "route_history": [orch],
             "is_terminal": False,
             "terminal_reason": None
         }
 
-        final_answer = ""
+        workers: List[str] = []           # ordered worker route, the loop net reads this
+        final_answer, last_worker_output = "", ""
+        terminal_state, breach_reason = None, None
 
-        while not state["is_terminal"]:
-            seq += 1
-            t_turn_start = time.time()
-
-            # Check Safety Nets before turn execution
-            breach = self.safety_nets.check_breaches(state, start_time, total_tokens)
+        while terminal_state is None:
+            breach = self.safety_nets.budget_breach(tokens_used(), start_time)
             if breach:
-                state["is_terminal"] = True
-                state["terminal_reason"] = breach
-                final_answer = f"[SYSTEM REFUSAL: {breach}]"
+                terminal_state, breach_reason = "cap_breached", breach
+                rt.emit(orch, "net_breach", owner=orch, reason=breach)
                 break
 
-            current_owner = state["last_active"]
-
             # 1. Orchestrator Dispatch Step
-            if current_owner == AgentName.ORCHESTRATOR.value:
-                handoff = self.orchestrator_step(state, run_num)
-                duration = (time.time() - t_turn_start) * 1000
-                total_tokens += 150
+            t0 = time.time()
+            handoff, usage, err, raw_args = self.orchestrator_step(state, run_num)
+            duration = round((time.time() - t0) * 1000, 1)
+            in_t, out_t = usage.get("input_tokens", 0), usage.get("output_tokens", 0)
+            rt.account(orch, input_tokens=in_t, output_tokens=out_t, duration_ms=duration, turns=1)
+            if err:
+                terminal_state, breach_reason = "error", err
+                rt.emit(orch, "error", owner=orch, error=err, raw_output=raw_args, duration_ms=duration,
+                        input_tokens=in_t, output_tokens=out_t)
+                break
 
-                self.tracer.log_event(
-                    task_id=task_id, run_num=run_num, seq=seq,
-                    agent=AgentName.ORCHESTRATOR.value, event="handoff_decision",
-                    owner=current_owner, duration_ms=duration,
-                    input_tokens=150, output_tokens=50,
-                    destination=handoff.destination, reason=handoff.reason,
-                    handoff_payload=handoff.payload.model_dump()
-                )
-
-                if handoff.destination == AgentName.ORCHESTRATOR.value:
-                    state["is_terminal"] = True
-                    state["terminal_reason"] = "answered"
-                    final_answer = handoff.payload.open_question or "I can assist you with insurance policy lookups and calculations."
-                    break
+            if handoff.destination == orch:
+                direct = (handoff.direct_answer or "").strip()
+                final_answer = direct or last_worker_output
+                rt.emit(orch, "direct_answer", owner=orch, reason=handoff.reason,
+                        direct_answer=handoff.direct_answer, used_last_worker_output=not direct,
+                        duration_ms=duration, input_tokens=in_t, output_tokens=out_t)
+                if final_answer:
+                    terminal_state = "answered"
                 else:
-                    state["last_active"] = handoff.destination
-                    state["handoff_data"] = handoff.payload.model_dump()
-                    state["route_history"].append(handoff.destination)
-                    state["agent_turns_count"] += 1
+                    terminal_state, breach_reason = "error", "orchestrator finished without an answer"
+                break
+
+            dest = handoff.destination
+            net = self.safety_nets.dispatch_breach(workers, dest)
+            rt.emit(orch, "handoff", owner=orch if net else dest,
+                    **{"from": workers[-1] if workers else orch, "to": dest},
+                    reason=handoff.reason, payload_keys=[k for k, v in handoff.payload.model_dump().items() if v],
+                    payload=handoff.payload.model_dump(), duration_ms=duration,
+                    input_tokens=in_t, output_tokens=out_t)
+            if net:
+                terminal_state, breach_reason = net
+                rt.emit(orch, "net_breach", owner=orch, reason=breach_reason,
+                        route=workers + [dest])
+                break
+
+            state["last_active"] = dest
+            state["handoff_data"] = handoff.payload.model_dump()
+            state["route_history"].append(dest)
+            state["agent_turns_count"] += 1
+            workers.append(dest)
 
             # 2. Worker Execution Steps
+            payload = HandoffPayload(**(state["handoff_data"] or {}))
+            worker_query = payload.open_question or user_query
+
+            if payload.constraints:
+                worker_query += f"\n[Constraints: {', '.join(payload.constraints)}]"
+            if payload.facts:
+                worker_query += f"\n[Established Facts: {json.dumps(payload.facts)}]"
+
+            t0 = time.time()
+
+            def check() -> Optional[str]:
+                return self.safety_nets.budget_breach(tokens_used(), start_time)
+
+            if dest == AgentName.RESEARCHER.value:
+                outcome = run_traced_react(self.researcher_agent, worker_query, rt, dest, check=check)
+            elif dest == AgentName.ANALYST.value:
+                outcome = run_traced_react(self.analyst_agent, worker_query, rt, dest, check=check)
             else:
-                payload = HandoffPayload(**(state["handoff_data"] or {}))
-                worker_query = payload.open_question or user_query
+                outcome = self._run_writer(worker_query, rt)
 
-                if payload.constraints:
-                    worker_query += f"\n[Constraints: {', '.join(payload.constraints)}]"
-                if payload.facts:
-                    worker_query += f"\n[Established Facts: {json.dumps(payload.facts)}]"
+            duration = round((time.time() - t0) * 1000, 1)
+            rt.account(dest, duration_ms=duration, turns=1)
+            rt.emit(dest, "worker_turn", owner=dest, received_payload=payload.model_dump(),
+                    query=worker_query, output=outcome.text, tool_calls=len(outcome.tool_outputs),
+                    input_tokens=outcome.input_tokens, output_tokens=outcome.output_tokens,
+                    duration_ms=duration, breach=outcome.breach, error=outcome.error)
 
-                worker_res_text = ""
-                tool_calls_count = 0
+            if outcome.error:
+                terminal_state, breach_reason = "error", outcome.error
+                break
+            if outcome.breach:
+                terminal_state, breach_reason = "cap_breached", outcome.breach
+                rt.emit(dest, "net_breach", owner=dest, reason=outcome.breach)
+                break
 
-                if current_owner == AgentName.RESEARCHER.value:
-                    res = self.researcher_agent.invoke({"messages": [HumanMessage(content=worker_query)]})
-                    msgs = res.get("messages", [])
-                    worker_res_text = msgs[-1].content if msgs else ""
-                    tool_calls_count = sum(len(m.tool_calls) for m in msgs if isinstance(m, AIMessage) and m.tool_calls)
+            last_worker_output = outcome.text
+            updated_facts = payload.facts
+            updated_facts[dest] = outcome.text
 
-                elif current_owner == AgentName.ANALYST.value:
-                    res = self.analyst_agent.invoke({"messages": [HumanMessage(content=worker_query)]})
-                    msgs = res.get("messages", [])
-                    worker_res_text = msgs[-1].content if msgs else ""
-                    tool_calls_count = sum(len(m.tool_calls) for m in msgs if isinstance(m, AIMessage) and m.tool_calls)
+            state["handoff_data"] = HandoffPayload(
+                summary=f"{dest} completed step.",
+                constraints=payload.constraints,
+                facts=updated_facts,
+                open_question=f"Synthesize or evaluate step after {dest}"
+            ).model_dump()
 
-                elif current_owner == AgentName.WRITER.value:
-                    res_msg = self.llm.invoke([
-                        SystemMessage(content=self.writer_prompt),
-                        HumanMessage(content=worker_query)
-                    ])
-                    worker_res_text = res_msg.content
+            if dest == AgentName.WRITER.value:
+                final_answer = outcome.text
+                terminal_state = "answered"
+            else:
+                state["last_active"] = orch
+                state["route_history"].append(orch)
 
-                duration = (time.time() - t_turn_start) * 1000
-                tokens_used = 750 + (tool_calls_count * 200)
-                total_tokens += tokens_used
+        if terminal_state in ("cap_breached", "loop_detected"):
+            final_answer = f"Could not complete the request: {breach_reason} limit reached."
+        elif terminal_state == "error" and not final_answer:
+            final_answer = f"ERROR: {breach_reason}"
 
-                self.tracer.log_event(
-                    task_id=task_id, run_num=run_num, seq=seq,
-                    agent=current_owner, event="worker_turn_complete",
-                    owner=current_owner, duration_ms=duration,
-                    input_tokens=600, output_tokens=150,
-                    tool_calls=tool_calls_count, result_preview=worker_res_text[:100]
-                )
-
-                updated_facts = payload.facts
-                updated_facts[current_owner] = worker_res_text
-
-                state["handoff_data"] = HandoffPayload(
-                    summary=f"{current_owner} completed step.",
-                    constraints=payload.constraints,
-                    facts=updated_facts,
-                    open_question=f"Synthesize or evaluate step after {current_owner}"
-                ).model_dump()
-
-                final_answer = worker_res_text
-
-                if current_owner == AgentName.WRITER.value or "final answer:" in worker_res_text.lower():
-                    state["is_terminal"] = True
-                    state["terminal_reason"] = "answered"
-                    break
-                else:
-                    state["last_active"] = AgentName.ORCHESTRATOR.value
-                    state["route_history"].append(AgentName.ORCHESTRATOR.value)
-
+        state["is_terminal"], state["terminal_reason"] = True, terminal_state
         total_duration = time.time() - start_time
-        worker_turns = max(0, state["agent_turns_count"])
+        totals = rt.totals()
 
-        self.tracer.log_summary(
-            task_id=task_id,
-            run_num=run_num,
-            terminal_state=state["terminal_reason"] or "completed",
-            total_turns=worker_turns,
-            total_duration_sec=total_duration,
-            total_tokens=total_tokens,
-            route_history=state["route_history"]
+        rt.summary(
+            terminal_state=terminal_state,
+            breach_reason=breach_reason,
+            route=workers,
+            route_history=state["route_history"],
+            agent_turns=len(workers),
+            input_tokens=totals["input_tokens"],
+            output_tokens=totals["output_tokens"],
+            total_tokens=totals["input_tokens"] + totals["output_tokens"],
+            tool_calls=totals["tool_calls"],
+            duration_ms=round(total_duration * 1000, 1),
+            final_answer=final_answer,
         )
 
         refusal_keywords = ["cannot answer", "missing", "unanswerable", "refuse", "not mentioned", "cap_breached"]
@@ -369,10 +363,16 @@ CRITICAL ROUTING RULES:
         return {
             "task_id": task_id,
             "final_answer": final_answer,
-            "terminal_state": state["terminal_reason"],
+            "terminal_state": terminal_state,
+            "breach_reason": breach_reason,
+            "route": workers,
             "route_history": state["route_history"],
-            "worker_turns": worker_turns,
-            "total_tokens": total_tokens,
+            "worker_turns": len(workers),
+            "input_tokens": totals["input_tokens"],
+            "output_tokens": totals["output_tokens"],
+            "total_tokens": totals["input_tokens"] + totals["output_tokens"],
+            "tool_calls": totals["tool_calls"],
+            "per_agent": rt.per_agent,
             "latency_seconds": round(total_duration, 3),
             "is_refused": is_refused
         }
@@ -381,5 +381,5 @@ CRITICAL ROUTING RULES:
 if __name__ == "__main__":
     print("🧪 Dry-running MultiAgentTeam...")
     team = MultiAgentTeam()
-    res = team.run_task(task_id="t26", user_query="Find the water damage deductible in the policy, then calculate payout for a $15,000 claim with 18% VAT.")
+    res = team.run_task(task_id="smoke", user_query="What are the minimum liability limits required by Virginia law under the auto policy?")
     print("✅ Result:", json.dumps(res, indent=2, ensure_ascii=False))

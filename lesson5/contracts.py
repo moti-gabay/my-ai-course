@@ -50,10 +50,15 @@ class Handoff(BaseModel):
         description="Target agent to handle the next step."
     )
     payload: HandoffPayload = Field(
+        default_factory=HandoffPayload,
         description="Data payload passed to the target agent."
     )
     reason: str = Field(
         description="Justification for the handoff for tracing purposes."
+    )
+    direct_answer: Optional[str] = Field(
+        default=None,
+        description="Only when destination is 'orchestrator': the complete reply to the user. Leave empty otherwise."
     )
 
 

@@ -120,60 +120,47 @@ def _event(kind: str, agent: str, title: str, body: Any, data: Any, seq: int, t0
     }
 
 
-def single_step_to_event(raw: Dict[str, Any], seq: int, t0: float) -> Optional[StepEvent]:
-    step = raw.get("step")
-    if step == "tool_call":
-        return _event("tool_call", "single_agent", f"call {raw.get('tool')}", None, raw.get("args"), seq, t0)
-    if step == "tool_result":
-        return _event("tool_result", "single_agent", f"{raw.get('tool')} returned", raw.get("content"), None, seq, t0)
-    if step == "final":
-        ok = raw.get("status") == "success"
+def trace_event_to_event(raw: Dict[str, Any], seq: int, t0: float) -> Optional[StepEvent]:
+    """Both configs write the same tracing.py events; agent is "single" or a team role."""
+    event, agent = raw.get("event"), raw.get("agent", "team")
+    if event == "summary":
         return _event(
-            "final" if ok else "error",
-            "single_agent",
-            "Final answer" if ok else f"Stopped: {raw.get('status')}",
-            raw.get("content") or raw.get("error_message"),
-            {"status": raw.get("status")},
-            seq, t0,
-        )
-    return None
-
-
-def team_event_to_event(raw: Dict[str, Any], seq: int, t0: float) -> Optional[StepEvent]:
-    if raw.get("event_type") == "summary":
-        return _event(
-            "summary", "team", "Run summary", None,
+            "summary", agent, "Run summary", None,
             {
-                "route_history": raw.get("route_history", []),
+                "route_history": raw.get("route") or [],
                 "terminal_state": raw.get("terminal_state"),
+                "breach_reason": raw.get("breach_reason"),
                 "total_tokens": raw.get("total_tokens"),
-                "total_turns": raw.get("total_turns"),
-                "duration_sec": raw.get("duration_sec"),
+                "total_turns": raw.get("agent_turns"),
+                "duration_sec": round((raw.get("duration_ms") or 0) / 1000, 2),
+                "per_agent": raw.get("per_agent"),
             },
             seq, t0,
         )
-
-    event = raw.get("event")
-    if event == "handoff_decision":
+    if event == "tool_call":
+        return _event("tool_result", agent, f"{agent}: {raw.get('tool')} returned", raw.get("output"),
+                      raw.get("input"), seq, t0)
+    if event in ("handoff", "direct_answer"):
+        dest = raw.get("to", "orchestrator")
         return _event(
-            "handoff", "orchestrator",
-            f"orchestrator -> {raw.get('destination')}",
-            raw.get("reason"),
+            "handoff", "orchestrator", f"orchestrator -> {dest}", raw.get("reason"),
             {
-                "destination": raw.get("destination"),
-                "payload": raw.get("handoff_payload") or {},
+                "destination": dest,
+                "payload": raw.get("payload") or {},
+                "direct_answer": raw.get("direct_answer"),
                 "duration_ms": raw.get("duration_ms"),
+                "tokens": (raw.get("input_tokens"), raw.get("output_tokens")),
             },
             seq, t0,
         )
-    if event == "worker_turn_complete":
+    if event == "worker_turn":
         return _event(
-            "worker_done", raw.get("agent", "worker"),
-            f"{raw.get('agent')} finished turn",
-            raw.get("result_preview"),
+            "worker_done", agent, f"{agent} finished turn", raw.get("output"),
             {"tool_calls": raw.get("tool_calls", 0), "duration_ms": raw.get("duration_ms")},
             seq, t0,
         )
+    if event in ("net_breach", "error"):
+        return _event("error", agent, f"{event}: {raw.get('reason') or raw.get('error')}", None, raw, seq, t0)
     return None
 
 
@@ -229,10 +216,15 @@ def run_single_live(
     task_meta: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     t0 = time.time()
-    collector = _EventCollector(single_step_to_event, on_event, t0)
+    collector = _EventCollector(trace_event_to_event, on_event, t0)
     runner = build_single_runner(cfg)
     try:
         result = runner.run_task(_playground_task(query, task_meta), run_number=1, on_step=collector)
+        collector.add(_event(
+            "final" if result.get("status") == "success" else "error", "single",
+            "Final answer", result.get("final_answer"),
+            {"terminal_state": result.get("terminal_state")}, 0, t0,
+        ))
     except Exception as exc:
         result = {
             "status": "execution_error",
@@ -254,7 +246,7 @@ def run_team_live(
     task_meta: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     t0 = time.time()
-    collector = _EventCollector(team_event_to_event, on_event, t0)
+    collector = _EventCollector(trace_event_to_event, on_event, t0)
     task_id = (task_meta or {}).get("task_id", "playground")
     team = build_team_runner(cfg, on_event=collector)
     try:
@@ -333,7 +325,7 @@ def safe_eval_team(team_instance, task: Dict[str, Any], run_num: int) -> Dict[st
 
 
 def summarize_rows(rows: List[Dict[str, Any]]) -> pd.DataFrame:
-    """The exact aggregation eval_runner writes to the Sliced_Summary sheet."""
+    """Mirrors the Sliced_Summary aggregation in eval_runner."""
     if not rows:
         return pd.DataFrame()
     df = pd.DataFrame(rows)
@@ -344,7 +336,9 @@ def summarize_rows(rows: List[Dict[str, Any]]) -> pd.DataFrame:
             success_rate=("success", "mean"),
             refusal_rate=("refused", "mean"),
             latency_p50=("latency_ms", "median"),
-            avg_tokens=("input_tokens", "mean"),
+            latency_p95=("latency_ms", lambda s: s.quantile(0.95)),
+            avg_input_tokens=("input_tokens", "mean"),
+            avg_output_tokens=("output_tokens", "mean"),
             avg_turns=("agent_turns", "mean"),
         )
         .reset_index()

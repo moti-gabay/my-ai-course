@@ -123,16 +123,21 @@ def normalize_summary_a4(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def normalize_summary_a5(df: pd.DataFrame) -> pd.DataFrame:
-    return pd.DataFrame({
+    # Pre-Phase-1 files have avg_tokens (input only); newer ones split input/output and add p95.
+    avg_tokens = df["avg_tokens"] if "avg_tokens" in df else df["avg_input_tokens"] + df["avg_output_tokens"]
+    out = pd.DataFrame({
         "config": df["config"],
         "task_type": df["type"],
         "total_runs": df["total_runs"],
         "success_rate": df["success_rate"],
         "refusal_rate": df["refusal_rate"],
         "latency_p50_ms": df["latency_p50"],
-        "avg_tokens": df["avg_tokens"],
+        "avg_tokens": avg_tokens,
         "avg_turns_or_tool_calls": df["avg_turns"],
     })
+    if "latency_p95" in df:
+        out["latency_p95_ms"] = df["latency_p95"]
+    return out
 
 
 def normalize_raw_a4(df: pd.DataFrame) -> pd.DataFrame:

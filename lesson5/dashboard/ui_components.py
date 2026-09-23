@@ -155,7 +155,7 @@ def render_step_event(container, ev: Dict[str, Any]) -> None:
         route = " → ".join(data.get("route_history") or [])
         container.caption(
             f"Route: {route}  ·  terminal state: `{data.get('terminal_state')}`  ·  "
-            f"{data.get('total_turns')} worker turns  ·  ~{data.get('total_tokens')} tokens"
+            f"{data.get('total_turns')} worker turns  ·  {data.get('total_tokens')} tokens"
         )
 
     elif kind == "final":
