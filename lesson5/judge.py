@@ -62,12 +62,12 @@ Judge only against the reference and the criterion, not your own knowledge of in
 
 FAITHFULNESS_RUBRIC = """You judge whether an assistant's ANSWER is faithful to the TOOL OUTPUTS it had: policy passages returned by search tools, page texts, and calculator results.
 
-Identify the answer's factual claims: coverage, limits, amounts, periods, conditions, exclusions, and computed figures. Check each claim against the tool outputs only, never against your own knowledge. A figure counts as supported when a tool output states it or a calculator output shows it. Greetings, offers to help, and statements that information is unavailable are not factual claims.
+Identify the answer's factual claims: coverage, limits, amounts, periods, conditions, exclusions, computed figures, and any names, contact details, or other policy or company specifics. Check each claim against the tool outputs only, never against your own knowledge. A figure counts as supported when a tool output states it or a calculator output shows it. Greetings, offers to help, and statements that information is unavailable are not factual claims.
 
 - supported: every factual claim is supported by the tool outputs.
 - partially_supported: at least one claim is supported and at least one is not supported or is contradicted.
 - unsupported: the answer's central claim is not supported, or it is contradicted by the tool outputs.
-- no_claims: the answer makes no factual claims (for example a greeting, a capability overview, or a refusal)."""
+- no_claims: the answer asserts no specific facts: no numbers, names, contact details, or policy or company specifics (for example a greeting, a capability overview, or a refusal that only says the information is unavailable)."""
 
 AGENT_TURN_RUBRIC = """You judge ONE agent in a multi-agent system: did it do ITS OWN job correctly, given what it received?
 
