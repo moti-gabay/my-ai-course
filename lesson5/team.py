@@ -164,7 +164,10 @@ Current Payload Facts: {json.dumps(facts_data, ensure_ascii=False)}
 CRITICAL ROUTING RULES:
 - If 'researcher' has already retrieved the facts AND 'analyst' has calculated the math, route to 'writer' or finish IMMEDIATELY.
 - NEVER route back to 'researcher' if policy facts are already present in Payload Facts!
-- Do NOT loop infinitely between workers."""
+- Do NOT loop infinitely between workers.
+
+House Rules:
+{self.procedural_memory}"""
 
         router_llm = self.llm.with_structured_output(Handoff, method="function_calling", include_raw=True)
         messages = [
