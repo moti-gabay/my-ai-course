@@ -55,7 +55,7 @@ class RunConfig:
     system_prompt: str = AGENT_SYSTEM_PROMPT
     # team
     max_turns: int = 8
-    max_tokens: int = 12000
+    max_tokens: int = 50000
     team_timeout_seconds: float = 45.0
     procedural_memory_text: str = ""
 

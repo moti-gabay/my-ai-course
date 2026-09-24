@@ -45,14 +45,18 @@ tokens and ~2.5x the latency, with no quality gain on any slice.
 
 ## 4. Locked safety-net values (filled after the dry run, then never changed)
 
+Locked after the dry run (`results/dryrun.xlsx`, `traces/dryrun_*.jsonl`, commit `9d7ef55`), before the full matrix. The code defaults match: `MultiAgentTeam(max_turns=8, max_tokens=50000, timeout_seconds=45.0)`.
+
 | Net | Value | Set from |
 |---|---|---|
-| Max agent turns (team) | | |
-| Token budget per task (team) | | |
-| Wall-clock timeout (team) | | |
+| Max agent turns (team) | 8 | Dry-run maximum was 2 worker turns. |
+| Token budget per task (team) | 50,000 | The net guards against runaway runs, not performance. The dry run sampled only 3 team runs (max 10,902 tokens), none with the analyst, a tool failure or a retry, so 3x that maximum (about 33,000) was judged too tight. |
+| Wall-clock timeout (team) | 45 s | Dry-run maximum was 12.6 s. |
 | Loop rule | same worker pair twice in a row (`team.detect_loop`) | code |
-| Max iterations (single) | | |
-| Wall-clock timeout (single) | | |
+| Max iterations (single) | 10 (recursion limit 21) | Frozen at `a5-baseline`. |
+| Wall-clock timeout (single) | 30 s | Frozen at `a5-baseline`. Dry-run maximum was 8.0 s. |
+
+**Frozen-baseline asymmetry:** the single agent's wall-clock net is 30 s and the team's is 45 s. The single agent's value is part of the frozen Assignment 4 baseline and is not raised to match the team. A single-agent timeout breach counts against the single agent, which is the conservative direction for a claim that the single agent wins.
 
 ---
 

@@ -47,7 +47,7 @@ class SafetyNetChecker:
     def __init__(
         self,
         max_turns: int = 8,
-        max_tokens: int = 12000,
+        max_tokens: int = 50000,
         timeout_seconds: float = 45.0
     ):
         self.max_turns = max_turns
@@ -102,7 +102,7 @@ class MultiAgentTeam:
         temperature: float = 0.0,
         procedural_memory_text: Optional[str] = None,
         max_turns: int = 8,
-        max_tokens: int = 12000,
+        max_tokens: int = 50000,
         timeout_seconds: float = 45.0,
         log_file: str = DEFAULT_TEAM_LOG,
         on_event: Optional[Callable[[Dict[str, Any]], None]] = None
