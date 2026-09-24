@@ -1,0 +1,34 @@
+[
+  {
+    "case": "s9_premise_from_question",
+    "model": "claude-sonnet-5",
+    "n": 5,
+    "verdicts": [
+      "supported",
+      "supported",
+      "supported",
+      "supported",
+      "supported"
+    ],
+    "expected": [
+      "supported"
+    ],
+    "agree": "5/5"
+  },
+  {
+    "case": "s10c_real_t32_single",
+    "model": "claude-sonnet-5",
+    "n": 5,
+    "verdicts": [
+      "no_claims",
+      "no_claims",
+      "no_claims",
+      "no_claims",
+      "no_claims"
+    ],
+    "expected": [
+      "no_claims"
+    ],
+    "agree": "5/5"
+  }
+]
