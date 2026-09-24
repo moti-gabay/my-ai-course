@@ -7,6 +7,7 @@ Outputs results directly into assignment_05.xlsx.
 import os
 import json
 import time
+from pathlib import Path
 import pandas as pd
 from typing import Dict, Any, List, Optional
 
@@ -200,55 +201,85 @@ def evaluate_team_agent_run(team_instance, task: Dict[str, Any], run_num: int,
     }
 
 
-def run_benchmark(output_excel: str = "assignment_05.xlsx", runs_per_task: int = 5):
-    tasks = load_task_set()
-    print(f"🚀 Starting Benchmark Evaluation Matrix ({len(tasks)} tasks x 2 configs x {runs_per_task} runs = {len(tasks)*2*runs_per_task} runs)...")
+def _summary(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.assign(success=pd.to_numeric(df["success"], errors="coerce"),
+                   refused=df["refused"].astype(float))
+    return df.groupby(["config", "type"]).agg(
+        total_runs=("run", "count"),
+        success_rate=("success", "mean"),
+        refusal_rate=("refused", "mean"),
+        latency_p50=("latency_ms", "median"),
+        latency_p95=("latency_ms", lambda s: s.quantile(0.95)),
+        avg_input_tokens=("input_tokens", "mean"),
+        avg_output_tokens=("output_tokens", "mean"),
+        avg_tool_calls=("tool_calls", "mean"),
+        avg_turns=("agent_turns", "mean")
+    ).reset_index()
 
-    single_agent = InsuranceAgent() if InsuranceAgent else None
-    team_agent = MultiAgentTeam()
 
-    all_results = []
-
-    for idx, task in enumerate(tasks, start=1):
-        print(f"\n--- Processing Task [{idx}/{len(tasks)}]: {task['task_id']} ({task['type']}) ---")
-        
-       # 1. Run Single Agent (5 runs)
-        for r in range(1, runs_per_task + 1):
-            res_single = evaluate_single_agent_run(single_agent, task, r)
-            all_results.append(res_single)
-            print(f"  [Single Agent] Run {r}/{runs_per_task} | Tokens: {res_single['input_tokens']} | Status: {res_single['terminal_state']}")
-
-        # 2. Run Multi-Agent Team (5 runs)
-        for r in range(1, runs_per_task + 1):
-            res_team = evaluate_team_agent_run(team_agent, task, r)
-            all_results.append(res_team)
-            print(f"  [Multi-Agent Team] Run {r}/{runs_per_task} | Tokens: {res_team['input_tokens']} | Status: {res_team['terminal_state']}")
-
-    # יצירת DataFrame וייצוא ל-Excel
-    df = pd.DataFrame(all_results)
-    
-    # ייצוא קובץ assignment_05.xlsx
+def _write_xlsx(rows: List[Dict[str, Any]], output_excel: str) -> None:
+    df = pd.DataFrame(rows)
     with pd.ExcelWriter(output_excel, engine="openpyxl") as writer:
         df.to_excel(writer, sheet_name="Raw_Execution_Logs", index=False)
-        
-        # יצירת טבלת סיכום מפולחת (Sliced Summary)
-        summary_df = df.groupby(["config", "type"]).agg(
-            total_runs=("run", "count"),
-            success_rate=("success", "mean"),
-            refusal_rate=("refused", "mean"),
-            latency_p50=("latency_ms", "median"),
-            latency_p95=("latency_ms", lambda s: s.quantile(0.95)),
-            avg_input_tokens=("input_tokens", "mean"),
-            avg_output_tokens=("output_tokens", "mean"),
-            avg_tool_calls=("tool_calls", "mean"),
-            avg_turns=("agent_turns", "mean")
-        ).reset_index()
-        
-        summary_df.to_excel(writer, sheet_name="Sliced_Summary", index=False)
+        _summary(df).to_excel(writer, sheet_name="Sliced_Summary", index=False)
 
-    print(f"\n\n✅ Benchmark Completed Successfully!")
-    print(f"📊 Results exported to '{output_excel}' with {len(all_results)} total execution records.")
+
+def run_benchmark(output_excel: str = "assignment_05.xlsx", runs_per_task: int = 5,
+                  task_ids: Optional[List[str]] = None, configs: tuple = ("single", "team"),
+                  agents_md: bool = True, team_max_tokens: Optional[int] = None,
+                  use_judge: bool = True):
+    """Task -> config -> run. Traces go to traces/<output stem>_{single,team}.jsonl and the
+    workbook is rewritten after every task, so an interrupted run keeps its rows."""
+    tasks = load_task_set()
+    if task_ids:
+        tasks = [t for t in tasks if t["task_id"] in task_ids]
+        assert len(tasks) == len(task_ids), f"unknown task id in {task_ids}"
+    stem = Path(output_excel).stem
+    trace_dir = Path(__file__).with_name("traces")
+    print(f"Benchmark: {len(tasks)} tasks x {len(configs)} configs x {runs_per_task} runs = "
+          f"{len(tasks) * len(configs) * runs_per_task} runs | AGENTS.md {'on' if agents_md else 'off'}"
+          f" | team token budget {team_max_tokens or 'default'} | traces {trace_dir}/{stem}_*.jsonl")
+
+    single_agent = InsuranceAgent(log_file=str(trace_dir / f"{stem}_single.jsonl")) if "single" in configs else None
+    team_kwargs = {"log_file": str(trace_dir / f"{stem}_team.jsonl")}
+    if not agents_md:
+        team_kwargs["procedural_memory_text"] = ""
+    if team_max_tokens:
+        team_kwargs["max_tokens"] = team_max_tokens
+    team_agent = MultiAgentTeam(**team_kwargs) if "team" in configs else None
+
+    all_results = []
+    for idx, task in enumerate(tasks, start=1):
+        print(f"\n--- Task [{idx}/{len(tasks)}]: {task['task_id']} ({task['type']}) ---")
+        for config in configs:
+            for r in range(1, runs_per_task + 1):
+                if config == "single":
+                    row = evaluate_single_agent_run(single_agent, task, r, use_judge=use_judge)
+                else:
+                    row = evaluate_team_agent_run(team_agent, task, r, use_judge=use_judge)
+                row["agents_md"] = agents_md
+                all_results.append(row)
+                print(f"  [{config}] run {r}/{runs_per_task} | {row['terminal_state']} | success={row['success']}"
+                      f" | tokens {row['input_tokens']}/{row['output_tokens']}"
+                      f" | judge {row.get('judge_input_tokens', 0)}/{row.get('judge_output_tokens', 0)}"
+                      f" | {row['latency_ms'] / 1000:.1f}s")
+        _write_xlsx(all_results, output_excel)
+
+    print(f"\nWrote {output_excel}: {len(all_results)} rows.")
 
 
 if __name__ == "__main__":
-    run_benchmark()
+    import argparse
+    ap = argparse.ArgumentParser(description="Single agent vs team benchmark")
+    ap.add_argument("--tasks", help="comma-separated task ids (default: all)")
+    ap.add_argument("--runs", type=int, default=5)
+    ap.add_argument("--configs", default="single,team")
+    ap.add_argument("--out", default="assignment_05.xlsx")
+    ap.add_argument("--no-agents-md", action="store_true", help="team without procedural memory")
+    ap.add_argument("--team-max-tokens", type=int, help="override the team token-budget net")
+    ap.add_argument("--no-judge", action="store_true")
+    a = ap.parse_args()
+    run_benchmark(output_excel=a.out, runs_per_task=a.runs,
+                  task_ids=a.tasks.split(",") if a.tasks else None,
+                  configs=tuple(a.configs.split(",")), agents_md=not a.no_agents_md,
+                  team_max_tokens=a.team_max_tokens, use_judge=not a.no_judge)
