@@ -65,7 +65,7 @@ def score_run(task: Dict[str, Any], config: str, answer: str, refused: bool, ter
 
     faith = None
     if use_judge and terminal_state in ("answered", "refused"):
-        faith = judge.judge_faithfulness(answer, tool_outputs)
+        faith = judge.judge_faithfulness(answer, tool_outputs, question=task["task"])
     return {
         "success": success,
         "success_method": method,

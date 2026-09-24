@@ -62,6 +62,8 @@ Judge only against the reference and the criterion, not your own knowledge of in
 
 FAITHFULNESS_RUBRIC = """You judge whether an assistant's ANSWER is faithful to the TOOL OUTPUTS it had: policy passages returned by search tools, page texts, and calculator results.
 
+You also get the user's QUESTION. Facts the user states about their own situation (their amounts, counts, dates, circumstances) count as given: the answer may repeat them or compute with them. The question never supports facts about a policy, a company, or the world.
+
 Identify the answer's factual claims: coverage, limits, amounts, periods, conditions, exclusions, computed figures, and any names, contact details, or other policy or company specifics. Check each claim against the tool outputs only, never against your own knowledge. A figure counts as supported when a tool output states it or a calculator output shows it. Greetings, offers to help, and statements that information is unavailable are not factual claims.
 
 - supported: every factual claim is supported by the tool outputs.
@@ -145,8 +147,9 @@ def judge_task_success(question: str, reference_answer: str, answer: str, criter
     return _judge("task_success", SUCCESS_RUBRIC, user, SuccessVerdict)
 
 
-def judge_faithfulness(answer: str, tool_outputs: List[Dict[str, Any]]) -> Dict[str, Any]:
-    user = f"TOOL OUTPUTS:\n{_format_tool_outputs(tool_outputs)}\n\nANSWER TO JUDGE:\n{answer}"
+def judge_faithfulness(answer: str, tool_outputs: List[Dict[str, Any]], question: str = "") -> Dict[str, Any]:
+    user = (f"QUESTION:\n{question or '(not provided)'}\n\n"
+            f"TOOL OUTPUTS:\n{_format_tool_outputs(tool_outputs)}\n\nANSWER TO JUDGE:\n{answer}")
     return _judge("faithfulness", FAITHFULNESS_RUBRIC, user, FaithfulnessVerdict)
 
 
