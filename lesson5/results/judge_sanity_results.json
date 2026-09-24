@@ -1,7 +1,7 @@
 {
   "model": "claude-sonnet-5",
-  "agreement_cases": "8/8",
-  "agreement_verdicts": "12/12",
+  "agreement_cases": "12/14",
+  "agreement_verdicts": "16/18",
   "cases": [
     {
       "id": "s1_correct_250",
@@ -25,7 +25,7 @@
           "explanation": "The answer states the $250 bail bond supplementary payment condition, which directly matches tool output [1]: 'Up to $250 for the cost of bail bonds required because of any accident, including related traffic law violations. The accident must result in bodily injury or property damage covered under this policy.' This is fully supported.",
           "input_tokens": 1128,
           "output_tokens": 116,
-          "cached": false,
+          "cached": true,
           "agree": true
         }
       ]
@@ -52,7 +52,7 @@
           "explanation": "The tool output clearly states the auto policy pays 'Up to $250 for the cost of bail bonds required because of any accident,' not $500. The answer's claim of $500 contradicts the source, which specifies $250.",
           "input_tokens": 1096,
           "output_tokens": 90,
-          "cached": false,
+          "cached": true,
           "agree": true
         }
       ]
@@ -69,7 +69,7 @@
           "explanation": "The claim that the policy pays up to $250 for bail bonds after a covered accident is directly supported by tool output [1]. However, the claim about reimbursing up to $1,000 of attorney fees for the related traffic hearing is not mentioned anywhere in the tool output. The tool output only mentions up to $200 a day for loss of earnings due to attendance at hearings, not attorney fees or a $1,000 figure. This claim is unsupported/fabricated.",
           "input_tokens": 1125,
           "output_tokens": 172,
-          "cached": false,
+          "cached": true,
           "agree": true
         }
       ]
@@ -96,7 +96,7 @@
           "explanation": "The answer only states that the requested information could not be found in the policy documents, which matches the NO_RESULTS tool output. It makes no specific factual claims about coverage, limits, amounts, or conditions.",
           "input_tokens": 839,
           "output_tokens": 85,
-          "cached": false,
+          "cached": true,
           "agree": true
         }
       ]
@@ -123,7 +123,7 @@
           "explanation": "The answer states the policy pays up to $250 for bail bond costs required due to an accident, provided the accident resulted in bodily injury or property damage covered under the policy. This matches tool output [1] verbatim: 'Up to $250 for the cost of bail bonds required because of any accident... The accident must result in bodily injury or property damage covered under this policy.' This is fully supported.",
           "input_tokens": 1157,
           "output_tokens": 141,
-          "cached": false,
+          "cached": true,
           "agree": true
         }
       ]
@@ -160,7 +160,7 @@
           "explanation": "The answer refuses to give a specific premium, which is not a factual claim itself. However, it provides specific factual details: a phone number (1-800-ALLSTATE) and website (allstate.com) for contacting Allstate, as well as general statements about factors affecting premiums (driving history, vehicle type, discounts, credit score). Since no tool calls were made, there are no tool outputs to support any of these claims, including the specific contact information. The phone number and website are specific factual claims presented as fact but have zero support from any tool output.",
           "input_tokens": 952,
           "output_tokens": 586,
-          "cached": false,
+          "cached": true,
           "agree": true
         }
       ]
@@ -177,7 +177,109 @@
           "explanation": "The answer contains no specific factual claims about policy details, coverage, amounts, or company specifics. It simply states that information is unavailable and suggests contacting the insurer, which is a refusal/non-answer rather than an assertion of facts.",
           "input_tokens": 749,
           "output_tokens": 97,
-          "cached": false,
+          "cached": true,
+          "agree": true
+        }
+      ]
+    },
+    {
+      "id": "s9_premise_from_question",
+      "about": "The count of accidents comes from the user's question; the policy figure and the product are in tool outputs.",
+      "agree": false,
+      "checks": [
+        {
+          "judge": "faithfulness",
+          "expected": "supported",
+          "verdict": "partially_supported",
+          "explanation": "The $250 per accident cap for bail bonds is directly supported by tool output [1]. The calculation 250*3=750 is supported by the calculator output [2]. However, the claim that 'you had three separate covered accidents' is not supported by any tool output—no policy holder-specific accident history or count was provided in the tool results. This factual claim about the user's accident count is fabricated/unsupported, making the overall conclusion (total payout of $750) rest on an unverified premise.",
+          "input_tokens": 1154,
+          "output_tokens": 438,
+          "cached": true,
+          "agree": false
+        }
+      ]
+    },
+    {
+      "id": "s9b_premise_plus_invented_amount",
+      "about": "s9 plus one invented policy amount (a $100 processing fee): the question must not excuse it.",
+      "agree": true,
+      "checks": [
+        {
+          "judge": "faithfulness",
+          "expected": "partially_supported",
+          "verdict": "partially_supported",
+          "explanation": "The $250 per accident bail bond limit is supported by [1]. The multiplication 3x$250=$750 is supported by the calculator output [2] and consistent with the scenario of three accidents (though the tool outputs don't explicitly confirm three accidents occurred, this is presumably given context). However, the claim of a '$100 processing fee deducted from each bail bond payment' is not mentioned anywhere in the tool outputs and is fabricated.",
+          "input_tokens": 1175,
+          "output_tokens": 167,
+          "cached": true,
+          "agree": true
+        }
+      ]
+    },
+    {
+      "id": "s10_general_definition",
+      "about": "General definition, no tools, no numbers, names nothing specific.",
+      "agree": true,
+      "checks": [
+        {
+          "judge": "faithfulness",
+          "expected": "no_claims",
+          "verdict": "no_claims",
+          "explanation": "The answer provides a general definition of what a deductible is, without referencing any specific policy, company, numeric limit, or contact detail. There are no tool outputs to verify against since none were provided. This is a generic informational statement not tied to specific policy facts.",
+          "input_tokens": 764,
+          "output_tokens": 100,
+          "cached": true,
+          "agree": true
+        }
+      ]
+    },
+    {
+      "id": "s10b_general_with_specific_amount",
+      "about": "A 'general' answer that asserts specific amounts with no tool output behind them.",
+      "agree": true,
+      "checks": [
+        {
+          "judge": "faithfulness",
+          "expected": "unsupported",
+          "verdict": "unsupported",
+          "explanation": "The answer makes several specific factual claims: that deductibles are 'usually $500', and that choosing a $1,000 deductible 'typically cuts your premium by about 25%'. There were no tool calls made, so no tool outputs exist to support any of these specific figures. The general definition of a deductible ('what you pay before the insurer pays') is a general concept claim not tied to any specific policy, but the specific numeric claims ($500 typical deductible, $1,000 deductible, 25% premium reduction) are unsupported by any tool output since no tools were called at all.",
+          "input_tokens": 769,
+          "output_tokens": 202,
+          "cached": true,
+          "agree": true
+        }
+      ]
+    },
+    {
+      "id": "s10c_real_t32_single",
+      "about": "Real dry-run answer (traces/dryrun_single.jsonl, t32): general explanation plus a hypothetical example ('if you have a $500 deductible...'). Scored unsupported in the dry run.",
+      "agree": false,
+      "checks": [
+        {
+          "judge": "faithfulness",
+          "expected": "no_claims",
+          "verdict": "unsupported",
+          "explanation": "No tool calls were made, so there are no tool outputs to verify claims against. The answer provides a general educational explanation of insurance deductibles with generic claims (definition, purposes, and a hypothetical example) that are not tied to any specific policy or company from tool outputs. Since there were no tool outputs at all, none of these claims can be considered supported by tool outputs.",
+          "input_tokens": 1100,
+          "output_tokens": 138,
+          "cached": true,
+          "agree": false
+        }
+      ]
+    },
+    {
+      "id": "s10d_real_t32_team",
+      "about": "Real dry-run answer (traces/dryrun_team.jsonl, t32): same structure, hypothetical $1,000 example. Scored no_claims in the dry run.",
+      "agree": true,
+      "checks": [
+        {
+          "judge": "faithfulness",
+          "expected": "no_claims",
+          "verdict": "no_claims",
+          "explanation": "There were no tool calls or outputs provided, so no policy-specific data exists to verify against. The answer gives a general, textbook explanation of deductibles and a generic example, not tied to any specific policy, company, or claim data. Since it doesn't rely on tool outputs (there are none) and doesn't purport to state specific policy figures from a document, it functions as general informational content rather than a claim requiring tool verification.",
+          "input_tokens": 1027,
+          "output_tokens": 153,
+          "cached": true,
           "agree": true
         }
       ]

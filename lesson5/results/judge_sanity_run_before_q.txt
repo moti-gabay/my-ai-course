@@ -1,0 +1,48 @@
+judge model: claude-sonnet-5
+
+OK   s1_correct_250         task_success  expected=pass                 got=pass                 tokens=754/87 (cached)
+      explanation: The answer matches the reference: $250 limit for bail bonds required due to a covered accident resulting in bodily injury or property damage. It omits the mention of related traffic law violations, but the core figures and conditions align.
+OK   s1_correct_250         faithfulness  expected=supported            got=supported            tokens=1128/116 (cached)
+      explanation: The answer states the $250 bail bond supplementary payment condition, which directly matches tool output [1]: 'Up to $250 for the cost of bail bonds required because of any accident, including related traffic law violations. The accident must result in bodily injury or property damage covered under this policy.' This is fully supported.
+OK   s2_wrong_500           task_success  expected=fail                 got=fail                 tokens=722/66 (cached)
+      explanation: Reference states the coverage limit is up to $250 for bail bonds, but the answer says up to $500, which contradicts the key figure in the reference.
+OK   s2_wrong_500           faithfulness  expected=unsupported          got=unsupported          tokens=1096/90 (cached)
+      explanation: The tool output clearly states the auto policy pays 'Up to $250 for the cost of bail bonds required because of any accident,' not $500. The answer's claim of $500 contradicts the source, which specifies $250.
+OK   s3_invented_extra      faithfulness  expected=partially_supported  got=partially_supported  tokens=1125/172 (cached)
+      explanation: The claim that the policy pays up to $250 for bail bonds after a covered accident is directly supported by tool output [1]. However, the claim about reimbursing up to $1,000 of attorney fees for the related traffic hearing is not mentioned anywhere in the tool output. The tool output only mentions up to $200 a day for loss of earnings due to attendance at hearings, not attorney fees or a $1,000 figure. This claim is unsupported/fabricated.
+OK   s4_clean_refusal       task_success  expected=pass                 got=pass                 tokens=744/82 (cached)
+      explanation: The answer correctly declines to provide a specific premium figure, stating it cannot be found in the policy documents, matching the reference's conclusion that this is not answerable from the corpus without inventing a value.
+OK   s4_clean_refusal       faithfulness  expected=no_claims            got=no_claims            tokens=839/85 (cached)
+      explanation: The answer only states that the requested information could not be found in the policy documents, which matches the NO_RESULTS tool output. It makes no specific factual claims about coverage, limits, amounts, or conditions.
+OK   s5_hebrew_250          task_success  expected=pass                 got=pass                 tokens=793/110 (cached)
+      explanation: The answer states up to $250 for bail bond costs required due to an accident causing bodily injury or property damage covered under the policy, matching the reference's key figure and condition. It omits mention of related traffic law violations, but the core fact ($250 limit, condition of covered accident) is correct.
+OK   s5_hebrew_250          faithfulness  expected=supported            got=supported            tokens=1157/141 (cached)
+      explanation: The answer states the policy pays up to $250 for bail bond costs required due to an accident, provided the accident resulted in bodily injury or property damage covered under the policy. This matches tool output [1] verbatim: 'Up to $250 for the cost of bail bonds required because of any accident... The accident must result in bodily injury or property damage covered under this policy.' This is fully supported.
+OK   s6_corrupted_payload   agent_turn    expected=pass                 got=pass                 tokens=888/139 (cached)
+      explanation: The agent was asked to compute the maximum total bail bond reimbursement for 3 accidents, given a $500 per-accident limit from the researcher's facts. It correctly used the calculator tool to compute 500*3=1500 and accurately reported the tool result without inventing extra facts or exceeding its role as financial analyst. The output is clear and usable by downstream steps.
+OK   s7_refusal_with_invented_facts faithfulness  expected=unsupported|partially_supported got=unsupported          tokens=952/586 (cached)
+      explanation: The answer refuses to give a specific premium, which is not a factual claim itself. However, it provides specific factual details: a phone number (1-800-ALLSTATE) and website (allstate.com) for contacting Allstate, as well as general statements about factors affecting premiums (driving history, vehicle type, discounts, credit score). Since no tool calls were made, there are no tool outputs to support any of these claims, including the specific contact information. The phone number and website are specific factual claims presented as fact but have zero support from any tool output.
+OK   s8_refusal_generic_advice faithfulness  expected=no_claims            got=no_claims            tokens=749/97 (cached)
+      explanation: The answer contains no specific factual claims about policy details, coverage, amounts, or company specifics. It simply states that information is unavailable and suggests contacting the insurer, which is a refusal/non-answer rather than an assertion of facts.
+DIFF s9_premise_from_question faithfulness  expected=supported            got=partially_supported  tokens=1154/438 (cached)
+      (inputs not accepted by this judge, not sent: ['question'])
+      explanation: The $250 per accident cap for bail bonds is directly supported by tool output [1]. The calculation 250*3=750 is supported by the calculator output [2]. However, the claim that 'you had three separate covered accidents' is not supported by any tool output—no policy holder-specific accident history or count was provided in the tool results. This factual claim about the user's accident count is fabricated/unsupported, making the overall conclusion (total payout of $750) rest on an unverified premise.
+OK   s9b_premise_plus_invented_amount faithfulness  expected=partially_supported  got=partially_supported  tokens=1175/167 (cached)
+      (inputs not accepted by this judge, not sent: ['question'])
+      explanation: The $250 per accident bail bond limit is supported by [1]. The multiplication 3x$250=$750 is supported by the calculator output [2] and consistent with the scenario of three accidents (though the tool outputs don't explicitly confirm three accidents occurred, this is presumably given context). However, the claim of a '$100 processing fee deducted from each bail bond payment' is not mentioned anywhere in the tool outputs and is fabricated.
+OK   s10_general_definition faithfulness  expected=no_claims            got=no_claims            tokens=764/100 (cached)
+      (inputs not accepted by this judge, not sent: ['question'])
+      explanation: The answer provides a general definition of what a deductible is, without referencing any specific policy, company, numeric limit, or contact detail. There are no tool outputs to verify against since none were provided. This is a generic informational statement not tied to specific policy facts.
+OK   s10b_general_with_specific_amount faithfulness  expected=unsupported          got=unsupported          tokens=769/202 (cached)
+      (inputs not accepted by this judge, not sent: ['question'])
+      explanation: The answer makes several specific factual claims: that deductibles are 'usually $500', and that choosing a $1,000 deductible 'typically cuts your premium by about 25%'. There were no tool calls made, so no tool outputs exist to support any of these specific figures. The general definition of a deductible ('what you pay before the insurer pays') is a general concept claim not tied to any specific policy, but the specific numeric claims ($500 typical deductible, $1,000 deductible, 25% premium reduction) are unsupported by any tool output since no tools were called at all.
+DIFF s10c_real_t32_single   faithfulness  expected=no_claims            got=unsupported          tokens=1100/138 (cached)
+      (inputs not accepted by this judge, not sent: ['question'])
+      explanation: No tool calls were made, so there are no tool outputs to verify claims against. The answer provides a general educational explanation of insurance deductibles with generic claims (definition, purposes, and a hypothetical example) that are not tied to any specific policy or company from tool outputs. Since there were no tool outputs at all, none of these claims can be considered supported by tool outputs.
+OK   s10d_real_t32_team     faithfulness  expected=no_claims            got=no_claims            tokens=1027/153 (cached)
+      (inputs not accepted by this judge, not sent: ['question'])
+      explanation: There were no tool calls or outputs provided, so no policy-specific data exists to verify against. The answer gives a general, textbook explanation of deductibles and a generic example, not tied to any specific policy, company, or claim data. Since it doesn't rely on tool outputs (there are none) and doesn't purport to state specific policy figures from a document, it functions as general informational content rather than a claim requiring tool verification.
+
+agreement: 12/14 cases, 16/18 verdicts
+tokens this run (uncached calls): input 0, output 0
+wrote /home/moti/projects/my-ai-course/lesson5/results/judge_sanity_results.json

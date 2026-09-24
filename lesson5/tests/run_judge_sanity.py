@@ -4,6 +4,7 @@ A case agrees only if every one of its verdicts matches. Results (with explanati
 token usage) go to results/judge_sanity_results.json. Cached verdicts cost nothing on rerun.
 Run: .venv/bin/python tests/run_judge_sanity.py
 """
+import inspect
 import json
 import sys
 from pathlib import Path
@@ -21,7 +22,10 @@ print(f"judge model: {judge.JUDGE_MODEL}\n")
 for case in cases:
     case_ok, rows = True, []
     for chk in case["checks"]:
-        r = FNS[chk["judge"]](**chk["inputs"])
+        fn = FNS[chk["judge"]]
+        accepted = inspect.signature(fn).parameters
+        ignored = [k for k in chk["inputs"] if k not in accepted]  # inputs the current judge does not take
+        r = fn(**{k: v for k, v in chk["inputs"].items() if k in accepted})
         allowed = chk["expected"] if isinstance(chk["expected"], list) else [chk["expected"]]
         ok = r["verdict"] in allowed
         shown = "|".join(allowed)
@@ -33,6 +37,8 @@ for case in cases:
         rows.append({"judge": chk["judge"], "expected": chk["expected"], **r, "agree": ok})
         print(f"{'OK  ' if ok else 'DIFF'} {case['id']:<22} {chk['judge']:<13} expected={shown:<20} got={r['verdict']:<20}"
               f" tokens={r['input_tokens']}/{r['output_tokens']}{' (cached)' if r['cached'] else ''}")
+        if ignored:
+            print(f"      (inputs not accepted by this judge, not sent: {ignored})")
         print(f"      explanation: {r['explanation']}")
     agree_cases += case_ok
     results.append({"id": case["id"], "about": case["about"], "agree": case_ok, "checks": rows})
