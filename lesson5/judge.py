@@ -64,12 +64,12 @@ FAITHFULNESS_RUBRIC = """You judge whether an assistant's ANSWER is faithful to 
 
 You also get the user's QUESTION. Facts the user states about their own situation (their amounts, counts, dates, circumstances) count as given: the answer may repeat them or compute with them. The question never supports facts about a policy, a company, or the world.
 
-Identify the answer's factual claims: coverage, limits, amounts, periods, conditions, exclusions, computed figures, and any names, contact details, or other policy or company specifics. Check each claim against the tool outputs only, never against your own knowledge. A figure counts as supported when a tool output states it or a calculator output shows it. Greetings, offers to help, and statements that information is unavailable are not factual claims.
+Identify the answer's factual claims: coverage, limits, amounts, periods, conditions, exclusions, computed figures, and any names, contact details, or other policy or company specifics. Check each claim against the tool outputs only, never against your own knowledge. A figure counts as supported when a tool output states it or a calculator output shows it. Greetings, offers to help, and statements that information is unavailable are not factual claims. Neither is general insurance knowledge that names no specific policy, company, contact detail, or real-world figure (for example, what a deductible is and why insurers use one), nor a hypothetical example the answer presents as an illustration ("if you had a $500 deductible..."). A specific figure asserted as fact about policies or the market ("deductibles are usually $500") is a factual claim.
 
 - supported: every factual claim is supported by the tool outputs.
 - partially_supported: at least one claim is supported and at least one is not supported or is contradicted.
 - unsupported: the answer's central claim is not supported, or it is contradicted by the tool outputs.
-- no_claims: the answer asserts no specific facts: no numbers, names, contact details, or policy or company specifics (for example a greeting, a capability overview, or a refusal that only says the information is unavailable)."""
+- no_claims: the answer asserts no specific facts: no numbers, names, contact details, or policy or company specifics (for example a greeting, a capability overview, a general explanation, or a refusal that only says the information is unavailable)."""
 
 AGENT_TURN_RUBRIC = """You judge ONE agent in a multi-agent system: did it do ITS OWN job correctly, given what it received?
 
