@@ -1,0 +1,88 @@
+{
+  "dry_run": "results/dryrun.xlsx",
+  "prices_per_mtok": {
+    "claude-haiku-4-5": [
+      1.0,
+      5.0
+    ],
+    "claude-sonnet-5": [
+      2.0,
+      10.0
+    ]
+  },
+  "per_run_usd": {
+    "single": {
+      "low": 0.012351,
+      "mean": 0.014687666666666668,
+      "high": 0.018109,
+      "mean_agent_tokens": [
+        5954.666666666667,
+        436.3333333333333
+      ],
+      "mean_judge_tokens": [
+        2377.3333333333335,
+        179.66666666666666
+      ]
+    },
+    "team": {
+      "low": 0.009475,
+      "mean": 0.026823333333333334,
+      "high": 0.03698,
+      "mean_agent_tokens": [
+        6906.333333333333,
+        678.3333333333334
+      ],
+      "mean_judge_tokens": [
+        4497.666666666667,
+        753.0
+      ]
+    }
+  },
+  "phases": [
+    {
+      "phase": "Phase 6: full matrix, single",
+      "config": "single",
+      "runs": 205,
+      "low": 2.531955,
+      "mean": 3.010971666666667,
+      "high": 3.712345
+    },
+    {
+      "phase": "Phase 6: full matrix, team",
+      "config": "team",
+      "runs": 205,
+      "low": 1.9423750000000002,
+      "mean": 5.498783333333334,
+      "high": 7.5809
+    },
+    {
+      "phase": "Phase 6: team without AGENTS.md",
+      "config": "team",
+      "runs": 205,
+      "low": 1.9423750000000002,
+      "mean": 5.498783333333334,
+      "high": 7.5809
+    },
+    {
+      "phase": "Phase 7: fix 1 re-run, team",
+      "config": "team",
+      "runs": 205,
+      "low": 1.9423750000000002,
+      "mean": 5.498783333333334,
+      "high": 7.5809
+    },
+    {
+      "phase": "Phase 7: fix 2 re-run, team",
+      "config": "team",
+      "runs": 205,
+      "low": 1.9423750000000002,
+      "mean": 5.498783333333334,
+      "high": 7.5809
+    }
+  ],
+  "total_usd": {
+    "low": 10.301455,
+    "mean": 25.006105000000005,
+    "high": 34.035945
+  }
+}
