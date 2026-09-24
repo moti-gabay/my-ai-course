@@ -1,0 +1,68 @@
+[
+  {
+    "task_id": "t19",
+    "config": "single",
+    "before": "partially_supported",
+    "after": "supported",
+    "after_explanation": "The answer's core claims are drawn directly from the tool outputs: the $250 per-accident bail bond limit is explicitly stated in the policy text (tool output [1]), and the coverage conditions (accident must result in covered bodily injury/property damage, includes related traffic law violations) are also directly quoted from the same source. The $750 total is derived from the calculator output (250*3=750), which is a legitimate computation based on the policy's 'per accident' phrasing and the user's stated fact of three separate covered accidents. All claims are supported by the tool outputs.",
+    "tokens": [
+      2784,
+      462
+    ]
+  },
+  {
+    "task_id": "t19",
+    "config": "team",
+    "before": "partially_supported",
+    "after": "partially_supported",
+    "after_explanation": "The policy text (chunk 1) explicitly states 'Up to $250 for the cost of bail bonds required because of any accident.' This confirms the $250 per-accident limit. The answer then multiplies this by the user-stated fact of three separate covered accidents to reach $750, which is a valid computation from the stated per-accident limit combined with the user's given facts. However, the claim that 'there is no aggregate cap specified for bail bond coverage across multiple accidents' is an assertion of absence not explicitly confirmed in the tool outputs—the search results only include one relevant policy provision and do not rule out an aggregate limit or per-policy-period cap elsewhere in the policy. This claim is speculative rather than directly supported.",
+    "tokens": [
+      2918,
+      923
+    ]
+  },
+  {
+    "task_id": "t32",
+    "config": "single",
+    "before": "unsupported",
+    "after": "no_claims",
+    "after_explanation": "The answer is a general explanation of what a deductible is and its general purposes, without naming any specific policy, company, or asserting specific real-world figures as fact. The $500 deductible example is explicitly presented as a hypothetical illustration ('if you have a $500 deductible... you would pay $500 and the insurance company would pay $1,500'), which is a self-consistent example, not a factual claim about any actual policy. No tool calls were made, and none were needed since the question asks for general knowledge. No specific factual claims requiring verification are present.",
+    "tokens": [
+      1331,
+      193
+    ]
+  },
+  {
+    "task_id": "t32",
+    "config": "team",
+    "before": "no_claims",
+    "after": "no_claims",
+    "after_explanation": "The answer provides only general insurance knowledge about deductibles (definition and general purposes) without citing any specific policy, company, or real-world figure as fact. The $1,000/$5,000 example is explicitly presented as an illustrative example, not asserted as a real fact. No tool calls were made, and none of the claims reference specific policy details, so there are no verifiable factual claims requiring tool support.",
+    "tokens": [
+      1258,
+      148
+    ]
+  },
+  {
+    "task_id": "t34",
+    "config": "single",
+    "before": "supported",
+    "after": "supported",
+    "after_explanation": "The answer claims Allstate pays up to $250 for bail bond costs required due to a covered accident. This matches tool output [1]/[2]: 'Up to $250 for the cost of bail bonds required because of any accident... The accident must result in bodily injury or property damage covered under this policy.' This is fully supported.",
+    "tokens": [
+      2644,
+      120
+    ]
+  },
+  {
+    "task_id": "t34",
+    "config": "team",
+    "before": "supported",
+    "after": "supported",
+    "after_explanation": "The answer states Allstate auto policy pays up to $250 for bail bond costs required due to a covered accident, including related traffic law violations. This is directly supported by tool output [1], which states 'Up to $250 for the cost of bail bonds required because of any accident, including related traffic law violations. The accident must result in bodily injury or property damage covered under this policy.' The claim matches the source exactly.",
+    "tokens": [
+      2698,
+      146
+    ]
+  }
+]
