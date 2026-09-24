@@ -8,30 +8,40 @@ Committed before the dry run (Phase 5). Sections 1 to 3 are filled by the author
 
 **Wall sentence:**
 
-_(author)_
+None — my single agent was fine. It has 3 tools (no tool overload), its context stays
+around 6k tokens per run (no context bloat), and cross_domain tasks are sequential by
+nature (search, then calculate), so there is nothing to parallelize (no serial
+bottleneck). I am building the team because the comparison is the deliverable, and I
+expect the Task 6 table to agree with this sentence.
 
 ## 2. Predicted outcome per task type
 
-Success is the rate over 5 runs, e.g. `4/5`.
+Success is the rate over all runs of that type (tasks x 5 runs), as a percentage.
 
 | Task type | Predicted winner (single / team / tie) | Predicted single success | Predicted team success | Why |
 |---|---|---|---|---|
-| single | | | | |
-| cross_domain | | | | |
-| misroute_bait | | | | |
-| no_tool | | | | |
-| handoff_stress | | | | |
-| unanswerable | | | | |
-| tool_fails | | | | |
+| single | single | ~85% | ~80% | Retrieval ceiling is recall@5 = 33/38; a router adds nothing to a one-step lookup and adds a synthesis step that can drop details |
+| cross_domain | single | ~85% | ~75% | Single does search + calculate in one loop; in the team the orchestrator tends to synthesize itself (3/3 smoke runs) and may skip the analyst or do mental math |
+| misroute_bait | single | ~90% | ~75% | Single has no routing step to get wrong; the team's router reads surface wording ("calculate", "format"). Predicted team routing accuracy ~60% |
+| no_tool | team | ~80% | ~100% | direct_answer worked in smoke, and legacy no_tool dispatched 0/48; single may call search_docs on "explain a deductible" |
+| handoff_stress | single | ~90% | ~80% | Single sees the Hebrew/30-word constraint directly; in the team, payload.constraints carries the orchestrator's own instructions (p2_bail) |
+| unanswerable | single | ~80% | ~70% | Both refused in smoke, but the team's refusal asserted invented facts (s7); the final synthesis step is where claims get added |
+| tool_fails | tie | ~60% | ~60% | Both risk answering from memory after an ERROR; success requires a refusal |
 
 ## 3. Predicted coordination failures (team only, per 100 runs)
 
 | Failure | Predicted count per 100 runs |
 |---|---|
-| loop_detected | |
-| cap_breached (turns, tokens, wall-clock) | |
-| over-dispatch on no_tool | |
-| lost constraint on handoff_stress | |
+| loop_detected | ~3 |
+| cap_breached (turns, tokens, wall-clock) | ~3 |
+| over-dispatch on no_tool | ~5 per 100 no_tool runs |
+| lost constraint on handoff_stress | ~50 per 100 handoff_stress runs |
+
+Additional prediction: the writer is invoked in fewer than 20% of team runs, because
+the orchestrator synthesizes the final answer itself (supervisor drift).
+
+Overall prediction: I would ship the single agent. The team will cost ~1.6-2x the
+tokens and ~2.5x the latency, with no quality gain on any slice.
 
 ## 4. Locked safety-net values (filled after the dry run, then never changed)
 
